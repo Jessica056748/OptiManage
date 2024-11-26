@@ -5,14 +5,13 @@
   let loggingIn = true;
 </script>
 
-<main>
-  {loggingIn ? <Login /> : <SignUp />}
-</main>
+<div>
+  {#if loggingIn}
+    <Login />
+  {:else}
+  <SignUp />
+  {/if}
+</div>
 
 <style>
-  form {
-    display: flex;
-    flex-direction: column;
-    column-gap: 10px;
-  }
 </style>
