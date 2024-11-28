@@ -30,41 +30,42 @@ app.get('/test-db', async (req, res) => {
 
 // createManager function (POST method)
 app.post('/create-manager', async (req, res) => {
-    const {username, password} = req.body;          // Get parameters from request body
+    const {sin, name, phone, address, departmentid, email, password} = req.body;          // Get parameters from request body
     const queryText = `
         SELECT *
         FROM MANAGER
-        WHERE username = $1
+        WHERE sin = $1 OR email = $2
         `;                     // Parameterized query to avoid SQL injections                      
-    const values = [username]; // Parameterized username to avoid SQL injections
+    const values = [sin, email]; // Parameterized username to avoid SQL injections
     const insertQuery = `
-        INSERT INTO MANAGER (username, password)
-        VALUES ($1, $2)
-        RETURNING id;
-    `
+        INSERT INTO MANAGER (sin, name, phone, address, departmentid, email, password)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING sin;
+    `;
     try {
         // 1. Sanitize user inputs
-        if (!username || !password) {
-            return res.status(400).json({error: 'Username and password are required'}); 
+        if (!sin || !address || !email || !name || !password) {
+            return res.status(400).json({error: 'SIN, name, address, email and password are required'}); 
         }
         // 2. Hash the password using bcrypt
         const saltRounds = 12;
         const hashedPassword = await bcrypt.hash(password, saltRounds); 
 
-        // 3. Check if username already exists
+        // 3. Check if SIN or email already exists
         const result = await pool.query(queryText, values); 
 
         if (result.rows.length > 0) { // If username exists (there will be a database object in result)
-            return res.status(400).json({error: 'Username already exists'});
+            return res.status(400).json({error: 'SIN or E-mail already exists'});
         }
 
+        insertValues = [sin, name, phone, address, departmentid, email, hashedPassword]
         // 4. Insert a new manager if the username doesn't exist
-        const insertResult = await pool.query(insertQuery, [username, hashedPassword]);
+        const insertResult = await pool.query(insertQuery, insertValues);
 
         // 5. Respond with success
         res.status(201).json({
             message: 'Manager account created successfully',
-            managerId: insertResult.rows[0].id
+            managerId: insertResult.rows[0].sin
         });
     } catch (error) {
         console.error('Error creating manager', error.message);

@@ -8,7 +8,8 @@ const pool = new Pool({
     host: process.env.DB_HOST,          // Database host (Local development)
     database: process.env.DB_DATABASE,     // Database name
     password: process.env.DB_PASSWORD,       // Password field
-    port: process.env.DB_PORT                  // Default PosgreSQL port 
+    port: process.env.DB_PORT,                  // Default PosgreSQL port 
+    options: `--search_path="Optimize"`
 });
 
 // Exports the pool for use in other files
