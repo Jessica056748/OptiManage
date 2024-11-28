@@ -78,9 +78,14 @@ app.post('/authenticate', async (req, res) => {
     const {email, password} = req.body;             // Get email and password values from request body
 
     // parameterized query to retrieve user by email
-    const queryText = `
-        SELECT *
+    const managerQuery = `
+        SELECT 'manager' AS role, *
         FROM manager
+        WHERE email = $1
+        `;
+    const employeeQuery = `
+        SELECT 'employee' AS role, *
+        FROM employee
         WHERE email = $1
         `;
     const values = [email];
@@ -90,14 +95,23 @@ app.post('/authenticate', async (req, res) => {
             return res.status(400).json({error: 'Email and password are required'});
         }
         // 2. Query database to find manager by email, storing full tuple in result
-        const result = await pool.query(queryText, [email]);
+        const managerResult = await pool.query(managerQuery, values);
 
-        // 3. Check if user exists
-        if (result.rows.length == 0) {
-            return res.status(400).json({error: 'Manager not found'});
+        // 3. Query the employee table if not found in the manager table
+        let user = null;
+        if (managerResult.rows.length > 0) { // If found in manager table
+            user = managerResult.rows[0]; // Manager tuple
+        } else {
+            const employeeResult = await pool.query(employeeQuery, values)
+            if (employeeResult.rows.length > 0) { // If found in employee table
+                user = employeeResult.rows[0]; // employee tuple
+            }
         }
 
-        const user = result.rows[0];    // User tuple
+        // 4. Check if user exists
+        if (!user) {    // If user is null
+            return res.status(400).json({error: 'Email not found in Manager or Employee records'});
+        }
 
         // 4. Compare hashed password
         const passwordMatch = await bcrypt.compare(password, user.password); // Returns a boolean stating whether it's a match (T) or not (F)
@@ -106,10 +120,10 @@ app.post('/authenticate', async (req, res) => {
         }
 
         // 5. Return success message (with name in case we want it to say "Welcome, <name>!")
-        const {name} = user;
+        const {name, role} = user;
         res.status(200).json({
             message: 'Authentication successful',
-            user: {name},
+            user: {name, role},
         })  // Object shorthand in case we want to return more values later
 
     } catch (error) {
