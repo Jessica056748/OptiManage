@@ -73,6 +73,51 @@ app.post('/create-manager', async (req, res) => {
     }
 });
 
+// authenticate(email, password) function (POST method)
+app.post('/authenticate', async (req, res) => {
+    const {email, password} = req.body;             // Get email and password values from request body
+
+    // parameterized query to retrieve user by email
+    const queryText = `
+        SELECT *
+        FROM manager
+        WHERE email = $1
+        `;
+    const values = [email];
+    try {
+        // 1. Sanitize user inputs
+        if (!email || !password) {
+            return res.status(400).json({error: 'Email and password are required'});
+        }
+        // 2. Query database to find manager by email, storing full tuple in result
+        const result = await pool.query(queryText, [email]);
+
+        // 3. Check if user exists
+        if (result.rows.length == 0) {
+            return res.status(400).json({error: 'Manager not found'});
+        }
+
+        const user = result.rows[0];    // User tuple
+
+        // 4. Compare hashed password
+        const passwordMatch = await bcrypt.compare(password, user.password); // Returns a boolean stating whether it's a match (T) or not (F)
+        if (!passwordMatch) {
+            return res.status(401).json({error: 'Invalid password'});
+        }
+
+        // 5. Return success message (with name in case we want it to say "Welcome, <name>!")
+        const {name} = user;
+        res.status(200).json({
+            message: 'Authentication successful',
+            user: {name},
+        })  // Object shorthand in case we want to return more values later
+
+    } catch (error) {
+        console.error('Error authenticating manager: ', error.message);
+        res.status(500).json({error: 'Failed to authenticate'});
+    }
+})
+
 // Start the server
 app.listen(PORT, () => {                    // PORT to listen for requests
     console.log(`Server is running on http://localhost:${PORT}`);

@@ -9,7 +9,7 @@ const pool = new Pool({
     database: process.env.DB_DATABASE,     // Database name
     password: process.env.DB_PASSWORD,       // Password field
     port: process.env.DB_PORT,                  // Default PosgreSQL port 
-    options: `--search_path="Optimize"`
+    options: `--search_path="Optimize"` 
 });
 
 // Exports the pool for use in other files
