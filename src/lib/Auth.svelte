@@ -1,17 +1,14 @@
-<script>
+<script lang="ts">
   import Login from "./Auth/Login.svelte";
   import SignUp from "./Auth/SignUp.svelte";
-
-
-  let loggingIn = true,
-    { currentAuthentication } = $props();
+  let signingUp = true
 </script>
 
-<div>
-  {#if loggingIn}
-    <Login />
+<div class="Auth">
+  {#if signingUp}
+    <SignUp />
   {:else}
-  <SignUp />
+    <Login />
   {/if}
 </div>
 

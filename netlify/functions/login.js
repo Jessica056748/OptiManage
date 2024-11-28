@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import pg from 'pg' 
+import pg from 'pg'
 
 const {
     SESSION_SECRET,
@@ -8,7 +8,7 @@ const {
     POSTGRES_USERNAME,
     POSTGRES_HOST,
     POSTGRES_PORT,
-    POSTGRES_DATABASE
+    POSTGRES_DATABASE,
   } = process.env,
   { Client } = pg,
   client = new Client({
@@ -17,6 +17,7 @@ const {
     host: POSTGRES_HOST,
     port: POSTGRES_PORT,
     database: POSTGRES_DATABASE,
+    options: '--search-path="Optimize'
   })
 
 export async function handler(event, context) {
@@ -39,10 +40,9 @@ export async function handler(event, context) {
     await client.connect()
 
     const query = `
-        Select E.Email, E.password
-        FROM Employee as E
-        WHERE E.Email = ${email}
-        AND E.Password = ${password}
+        select *
+        from manager
+        where email = ${email}
       `,
       res = await client.query(query)
 

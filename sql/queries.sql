@@ -7,15 +7,16 @@ CREATE SCHEMA IF NOT EXISTS "Optimize"
 set search_path to "Optimize";
 
 CREATE TABLE "Optimize".Employee (  
-SIN CHAR (9) primary key,  
-Name VARCHAR (15) NOT NULL,  
-Phone CHAR(10),  
-Address  VARCHAR (100) NOT NULL,  
-DepartmentId INT,   
-Email VARCHAR (50) NOT NULL, 
-Password VARCHAR(30) NOT NULL, 
-MSIN Varchar(9) NOT NULL,
-Rate Decimal(6,2) NOT NULL);
+  SIN       CHAR (9)                       primary key,  
+  Name      VARCHAR (15)                       NOT NULL,  
+  Phone       CHAR(10),                        
+  Address        VARCHAR (100)                       NOT NULL,  
+  DepartmentId      INT,   
+  Email       VARCHAR (50)                       NOT NULL, 
+  Password      VARCHAR(30)                       NOT NULL, 
+  MSIN      Varchar(9)                       NOT NULL,
+  Rate      Decimal(6,2)                       NOT NULL
+);
 
 CREATE TABLE "Optimize".Manager(  
 SIN CHAR (9) Primary Key,  

@@ -3,12 +3,8 @@
   import Home from './lib/Home/Home.svelte';
   import Nav from './lib/Nav.svelte';
   import Footer from './lib/Footer.svelte';
-  
-  enum Authentication {
-    Manager,
-    Employee,
-    None
-  }
+  import Authentication from './authState';
+
   let currentAuthentication: Authentication = $state(Authentication.None);
 </script>
 
