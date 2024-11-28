@@ -2,6 +2,7 @@
 const express = require('express');     // Import express library (server creation, route definition, handles HTTP requests)
 const cors = require('cors');           // Import cross-origin resource sharing library (allows backend to frontend comms on a diff domain or port)
 const pool = require('./db');           // Import the connection pool from db.js
+const bcrypt = require('bcrypt');
 
 // Create an instance of express
 const app = express();                    // Main object of the server (express instance)
@@ -24,6 +25,50 @@ app.get('/test-db', async (req, res) => {
     } catch (error) {
         console.error('Database connection error: ', error.message);
         res.status(500).json({error: 'Database connection failed.'});
+    }
+});
+
+// createManager function (POST method)
+app.post('/create-manager', async (req, res) => {
+    const {username, password} = req.body;          // Get parameters from request body
+    const queryText = `
+        SELECT *
+        FROM MANAGER
+        WHERE username = $1
+        `;                     // Parameterized query to avoid SQL injections                      
+    const values = [username]; // Parameterized username to avoid SQL injections
+    const insertQuery = `
+        INSERT INTO MANAGER (username, password)
+        VALUES ($1, $2)
+        RETURNING id;
+    `
+    try {
+        // 1. Sanitize user inputs
+        if (!username || !password) {
+            return res.status(400).json({error: 'Username and password are required'}); 
+        }
+        // 2. Hash the password using bcrypt
+        const saltRounds = 12;
+        const hashedPassword = await bcrypt.hash(password, saltRounds); 
+
+        // 3. Check if username already exists
+        const result = await pool.query(queryText, values); 
+
+        if (result.rows.length > 0) { // If username exists (there will be a database object in result)
+            return res.status(400).json({error: 'Username already exists'});
+        }
+
+        // 4. Insert a new manager if the username doesn't exist
+        const insertResult = await pool.query(insertQuery, [username, hashedPassword]);
+
+        // 5. Respond with success
+        res.status(201).json({
+            message: 'Manager account created successfully',
+            managerId: insertResult.rows[0].id
+        });
+    } catch (error) {
+        console.error('Error creating manager', error.message);
+        res.status(500).json({error: 'Failed to create Manager'});
     }
 });
 

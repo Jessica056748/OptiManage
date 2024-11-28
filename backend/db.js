@@ -1,12 +1,14 @@
+require('dotenv').config();
+
 const { Pool } = require('pg'); // Desconstruct pg to get the Pool module only
 
 // Create a connection pool
 const pool = new Pool({
-    user: 'postgres',           // Replace with PostgreSQL username
-    host: 'localhost',          // Database host (Local development)
-    database: 'test_backend',     // Database name
-    password: 'Aladino',       // Password field
-    port: 5432                  // Default PosgreSQL port 
+    user: process.env.DB_USER,           // Replace with PostgreSQL username
+    host: process.env.DB_HOST,          // Database host (Local development)
+    database: process.env.DB_DATABASE,     // Database name
+    password: process.env.DB_PASSWORD,       // Password field
+    port: process.env.DB_PORT                  // Default PosgreSQL port 
 });
 
 // Exports the pool for use in other files
