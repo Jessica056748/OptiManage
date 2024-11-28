@@ -8,7 +8,7 @@
     event.preventDefault()
 
     // @ts-ignore
-    console.log(Object.fromEntries(new FormData(event.target)))
+    const { email, password } = Object.fromEntries(new FormData(event.target)) 
     let status
 
     try {

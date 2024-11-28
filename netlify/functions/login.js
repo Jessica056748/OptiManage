@@ -1,13 +1,22 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import mysql from 'mysql'
+import pg from 'pg' 
 
-const { SESSION_SECRET } = process.env,
-  connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'me',
-    password: 'secret',
-    database: 'my_db',
+const {
+    SESSION_SECRET,
+    POSTGRES_PASSWORD,
+    POSTGRES_USERNAME,
+    POSTGRES_HOST,
+    POSTGRES_PORT,
+    POSTGRES_DATABASE
+  } = process.env,
+  { Client } = pg,
+  client = new Client({
+    user: POSTGRES_USERNAME,
+    password: POSTGRES_PASSWORD,
+    host: POSTGRES_HOST,
+    port: POSTGRES_PORT,
+    database: POSTGRES_DATABASE,
   })
 
 export async function handler(event, context) {
@@ -27,35 +36,18 @@ export async function handler(event, context) {
     }
 
   try {
-    connection.connect(error => {
-      if (!error)
-        return console.log('Connected to MySQL as id ' + connection.threadId)
+    await client.connect()
 
-      console.error('Could not connect to MySQL: ' + error.stack)
-
-      return {
-        statusCode: 503,
-        body: JSON.stringify({
-          serverError: error.toString(),
-        }),
-      }
-    })
-
-    // Query SQL for email and password hash.
     const query = `
-      Select E.Email, E.password  
-      FROM Employee as E 
-      WHERE E.Email = ${email}  
-      AND E.Password = ${password}
-    `
-    connection.query(query, (error, results, fields) => {
-      if (error) throw error
+        Select E.Email, E.password
+        FROM Employee as E
+        WHERE E.Email = ${email}
+        AND E.Password = ${password}
+      `,
+      res = await client.query(query)
 
-      // Compare!
-      console.log('The solution is: ', results[0].solution)
-    })
+    console.log(res.rows[0].message)
 
-    // If successful:
     const token = jwt.sign(
       {
         username,
@@ -65,8 +57,6 @@ export async function handler(event, context) {
         expiresIn: '8h',
       }
     )
-
-    connection.end()
 
     return {
       statusCode: 200,
@@ -87,5 +77,7 @@ export async function handler(event, context) {
         serverError: error.toString(),
       }),
     }
+  } finally {
+    await client.end()
   }
 }
