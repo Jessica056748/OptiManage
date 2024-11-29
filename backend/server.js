@@ -249,6 +249,9 @@ app.post('/add-request', authenticateToken, async (req, res) => {
         WHERE sin = $1
         `;
     try {
+        if (!week || !day || !type) {
+            return res.status(400).json({error : 'Week, day, and type are required.'});
+        }
         // Query database for the manager SIN (msin)
         const result = await pool.query(toSinQuery, [sin]);
         if (result.rows.length === 0) {
@@ -269,7 +272,7 @@ app.post('/add-request', authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error('Error adding request: ', error.message);
-        res.status(500).jason({error: 'Failed to add request'});
+        res.status(500).json({error: 'Failed to add request'});
     }
 
 
