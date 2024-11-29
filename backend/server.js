@@ -237,10 +237,10 @@ app.post('/add-employee', async (req, res) => {
     }
 });
 
-// addRequest(sin) function
+// addRequest() function
 app.post('/add-request', authenticateToken, async (req, res) => {
     const {sin} = req.user;                      // Extract sin from req.user (after token validity)
-    const {week, day, type} = req.body; // Extract parameters from request body
+    const {requestId, week, day, type} = req.body; // Extract parameters from request body
     
     // Validation queries
     const toSinQuery = `
@@ -259,17 +259,26 @@ app.post('/add-request', authenticateToken, async (req, res) => {
         }
         // Else we have the row that inlcudes msin
         const toSin = result.rows[0].msin;      // Manager's sin
+
         const insertQuery = `
             INSERT INTO request (week, day, fromSin, toSin, type)
             VALUES ($1, $2, $3, $4, $5)
             RETURNING id
             `;
+        
         const insertResult = await pool.query(insertQuery, [week, day, sin, toSin, type]);
 
-        res.status(201).json({
-            message: 'Request submitted successfully',
-            requestId: insertResult.rows[0].id
-        });
+        // Create a notification for the manager
+        const notificationQuery = `
+            INSERT INTO notifications (to_msin, request_id, message)
+            VALUES ($1, $2, $3)
+            `;
+        const notificationMessage = `New request from employee ${sin} for ${type}`;
+        const notificationValues = [toSin, requestId, notificationMessage];
+        await pool.query(notificationQuery, notificationValues);
+
+        res.status(201).json({message: 'Request created successfully and manager notified '});
+
     } catch (error) {
         console.error('Error adding request: ', error.message);
         res.status(500).json({error: 'Failed to add request'});
