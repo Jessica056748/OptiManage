@@ -58,7 +58,7 @@ app.post('/create-manager', async (req, res) => {
             return res.status(400).json({error: 'SIN or E-mail already exists'});
         }
 
-        insertValues = [sin, name, phone, address, departmentid, email, hashedPassword]
+        insertValues = [sin, name, phone, address, departmentid, email, hashedPassword];
         // 4. Insert a new manager if the username doesn't exist
         const insertResult = await pool.query(insertQuery, insertValues);
 
@@ -131,6 +131,78 @@ app.post('/authenticate', async (req, res) => {
         res.status(500).json({error: 'Failed to authenticate'});
     }
 })
+
+// Add employee function
+app.post('/add-employee', async (req, res) => {
+    const {sin, name, phone, address, departmentid, email, password, msin, rate} = req.body;          // Get parameters from request body
+    const queryText = `
+        SELECT *
+        FROM employee
+        WHERE sin = $1 OR email = $2
+        `;                     // Parameterized query to avoid SQL injections                      
+    const values = [sin, email]; // Parameterized username to avoid SQL injections
+    const insertQuery = `
+        INSERT INTO employee (sin, name, phone, address, departmentid, email, password, msin, rate)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING sin;
+    `;
+    const managerCheckQuery = `
+        SELECT *
+        FROM manager
+        WHERE sin = $1
+        `;
+    const managerSin = [msin];
+
+    const departmentidQuery = `
+        SELECT *
+        FROM department
+        WHERE departmentid = $1
+        `;
+    const departmentidValue = [departmentid];
+    try {
+        // Sanitize user inputs
+        if (!sin || !address || !email || !name || !password || !msin || !rate || !departmentid) { 
+            return res.status(400).json({error: 'SIN, name, address, email, manager SIN, rate and password are required'}); 
+        }
+        // Check if manager exists in Schema
+        const managerResult = await pool.query(managerCheckQuery, managerSin);
+        if (managerResult.rows.length === 0) {
+            return res.status(400).json({error: 'Invalid Manager SIN'});
+        }
+        // Check if departmentid exists in Schema
+        const departmentidResult = await pool.query(departmentidQuery, departmentidValue);
+        if (departmentidResult.rows.length === 0) {
+            return res.status(400).json({error: 'Invalid department ID'});
+        }
+        // Hash the password using bcrypt
+        const saltRounds = 12;
+        const hashedPassword = await bcrypt.hash(password, saltRounds); 
+
+        // Check if SIN or email already exists
+        const result = await pool.query(queryText, values); 
+
+        if (result.rows.length > 0) { // If username exists (there will be a database object in result)
+            return res.status(400).json({error: 'SIN or E-mail already exists'});
+        }
+
+        insertValues = [sin, name, phone, address, departmentid, email, hashedPassword, msin, rate];
+        // Insert a new manager if the username doesn't exist
+        const insertResult = await pool.query(insertQuery, insertValues);
+
+        // Respond with success
+        res.status(201).json({
+            message: 'Employee account created successfully',
+            employee: {
+                sin: insertResult.rows[0].sin,
+                name,
+                email
+            }
+        });
+    } catch (error) {
+        console.error('Error creating employee', error.message);
+        res.status(500).json({error: 'Failed to create Employee'});
+    }
+});
 
 // Start the server
 app.listen(PORT, () => {                    // PORT to listen for requests
