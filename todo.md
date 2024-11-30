@@ -1,13 +1,14 @@
-[X] Set up xin Chao Coffee again (changed)
-  - I forgot all of my ENV variables; but maybe this doesn't matter, since the reason I'm opening this up is to be able to reference the code.
+# Notes
 
-[] Figure out how to connect Svelte to Daniel's backend
+By convention, npm i is usually run at the root of the project, not in a sub-directory (here, backend). I think we should change this.
 
-[] Code the HTML, JS and CSS of each component:
-  [] Auth
-    [] Login
-    [] Sign Up
-  []
+## Tasks
 
+[ ] Merge Svelte with Express
+[ ] Ensure the Vite dist directory (after npm build) can communicate with the backend
+[ ] Run both the backend server and the front-end simultaneously
+  [ ] Copy the "backend" folder onto Svelte, and try to run both servers using two terminals
 
-[] Style components
+## Concerns or Questions
+
+- Is dbinfo.txt supposed to be the .env file? If so, should we write a note to convert it to .env and fill the values at the top of that file?

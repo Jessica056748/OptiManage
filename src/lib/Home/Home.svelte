@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type Authentication from '../../authState'
+  import { Role } from '../../role';
 
-  let { currentAuthentication: Authentication } = $props();
+  let { role }: { role: Role } = $props();
 </script>
 
 

@@ -3,20 +3,22 @@
   import Home from './lib/Home/Home.svelte';
   import Nav from './lib/Nav.svelte';
   import Footer from './lib/Footer.svelte';
-  import Authentication from './authState';
+  import { Role } from './role.ts';
+  const log = console.log.bind(console);
 
-  let currentAuthentication: Authentication = $state(Authentication.None);
+  let role: Role = $state(Role.None),
+    signingUp: boolean = $state(false)
 </script>
 
 <main>
-  {#if currentAuthentication === Authentication.None}
-
-  <Auth {currentAuthentication} />
+  {#if role === Role.None}
+  <!-- If I mutate role in Auth, does it update roles's actual state? -->
+  <Auth {role} {signingUp} />
 
   {:else}
 
-  <Nav {currentAuthentication} />
-  <Home {currentAuthentication} />
+  <Nav {role} />
+  <Home {role} />
   <Footer />
   
   {/if}

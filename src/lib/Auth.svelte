@@ -1,7 +1,10 @@
 <script lang="ts">
   import Login from "./Auth/Login.svelte";
   import SignUp from "./Auth/SignUp.svelte";
-  let signingUp = true
+  import { Role } from "../role";
+  
+  // 
+  let { role, signingUp }: { role: Role, signingUp: boolean } = $props();
 </script>
 
 <div class="Auth">
