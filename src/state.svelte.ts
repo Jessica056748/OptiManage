@@ -1,5 +1,5 @@
 import { Role } from './role.ts'
 
 export const globalState = $state({
-  role: Role.None
+  role: Role.Manager
 })

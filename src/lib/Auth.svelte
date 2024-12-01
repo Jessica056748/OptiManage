@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Login from "./Auth/Login.svelte"
-  import SignUp from "./Auth/SignUp.svelte"
+  import Login from "./auth/Login.svelte"
+  import SignUp from "./auth/SignUp.svelte"
   import { Role } from "../role"
   import { globalState } from "../state.svelte"
 

@@ -1,6 +1,8 @@
 <script lang="ts">
 </script>
 
-<div></div>
+<nav>
+
+</nav>
 
 <style></style>
