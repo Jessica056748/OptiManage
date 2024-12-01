@@ -1,6 +1,6 @@
 <script lang="ts">
   import Auth from './lib/Auth.svelte'
-  import Home from './lib/Home/Home.svelte'
+  import Home from './lib/Home.svelte'
   import Nav from './lib/Nav.svelte'
   import Footer from './lib/Footer.svelte'
   import { globalState } from './state.svelte'
