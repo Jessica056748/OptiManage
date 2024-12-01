@@ -44,29 +44,92 @@
 
     // Otherwise, something else went wrong. Give a vague "try again" message here.
   }
+
+  /**
+   * Changes state of parent to signing up.
+   */
+  function switchToSignUp(event: Event) {
+  }
 </script>
 
   <form onsubmit={login}>
-    Login
+    <h2>Login</h2>
 
     <label>
-      Username or email
-      <input type="text" name="email" id="email" required>
+      Email
+      <input type="text" name="email" id="email" placeholder="PParker@optimanage.ca" required>
     </label>
 
     <label>
       Password
 
-      <input type="password" name="password" id="password" required>
+      <input type="password" name="password" id="password" placeholder="PeterParker" required>
     </label>
 
-    <input type="submit" value="Submit">
+    <input type="submit" value="Login">
+
+    <div>
+      No account?
+      <button onclick={switchToSignUp}>Sign up!</button>
+    </div>
   </form>
 
 <style>
   form {
+    width: 80%;
+    border: 1px solid transparent;
+
+    background-color: hsl(0, 0%, 20%);
+    border-radius: 10px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    column-gap: 10px;
+    row-gap: 10px;
+    transition: border-color 0.25s;
   }
+  form:hover {
+    border-color: hsl(237, 100%, 70%);
+  }
+
+  h2, div {
+    align-self: center;
+  }
+  label {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+  }
+  input:not([type=submit]) {
+    width: 100%;  
+  }
+
+  input[type=submit] {
+    width: 100px;
+    align-self: center;
+  }
+  @media (prefers-color-scheme: dark) {
+    input::placeholder {
+      color: hsl(0, 0, 95%);
+    }  
+  }
+
+  @media only screen and (min-width: 700px) {
+    form {
+      width: 45%;
+    }
+    input:not([type=submit]) {
+      width: 90%;  
+    }
+  }
+
+  @media only screen and (min-width: 1000px) {
+    form {
+      width: 30%;
+    }
+    input:not([type=submit]) {
+      width: 80%;  
+    }
+  }
+
 </style>

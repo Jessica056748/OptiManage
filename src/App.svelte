@@ -10,7 +10,7 @@
     log = console.log.bind(console)
 </script>
 
-<main>
+<main class={role === Role.None ? "auth" : ""}>
   {#if role === Role.None}
     <Auth  />
   {:else}
@@ -21,4 +21,6 @@
 </main>
 
 <style>
+.auth {
+}
 </style>
