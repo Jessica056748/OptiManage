@@ -97,6 +97,7 @@ app.post('/create-manager', async (req, res) => {
 
 // authenticate(email, password) function (POST method)
 app.post('/authenticate', async (req, res) => {
+    console.log('req:', req)
     const {email, password} = req.body;             // Get email and password values from request body
 
     // parameterized query to retrieve user by email

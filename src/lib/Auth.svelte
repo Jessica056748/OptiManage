@@ -1,15 +1,17 @@
 <script lang="ts">
-  import Login from "./Auth/Login.svelte";
-  import SignUp from "./Auth/SignUp.svelte";
-  import { Role } from "../role";
-  
-  // 
-  let { role, signingUp }: { role: Role, signingUp: boolean } = $props();
+  import Login from "./Auth/Login.svelte"
+  import SignUp from "./Auth/SignUp.svelte"
+  import { Role } from "../role"
+  import { globalState } from "../state.svelte"
+
+let signingUp: boolean = $state(false)
 </script>
 
 <div class="Auth">
   {#if signingUp}
-    <SignUp />
+    <SignUp  />
+
+
   {:else}
     <Login />
   {/if}
