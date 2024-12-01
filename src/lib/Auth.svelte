@@ -10,10 +10,10 @@ let signingUp: boolean = $state(false)
 <h1>ʘptiManage</h1>
 <div class="auth-wrapper">
   {#if signingUp}
-    <SignUp  />
+    <SignUp bind:signingUp={signingUp} />
 
   {:else}
-    <Login />
+    <Login bind:signingUp={signingUp}/>
   {/if}
 </div>
 

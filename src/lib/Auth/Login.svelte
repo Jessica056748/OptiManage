@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Role } from "../../role";
   import { globalState } from "../../state.svelte";
-  const log = console.log.bind(console),
-    { VITE_BACKEND_PORT: PORT } = import.meta.env
+  let { signingUp = $bindable() }: { signingUp: boolean} = $props()
+  const { VITE_BACKEND_PORT: PORT } = import.meta.env
 
   /**
    * Sends a login request to the server, and updates App state if successful. Does not mutate the database.
@@ -11,7 +11,7 @@
     event.preventDefault()
 
     // @ts-ignore
-    const { email, password } = Object.fromEntries(new FormData(event.target)) 
+    const body = Object.fromEntries(new FormData(event.target)) 
     let status
 
     try {
@@ -20,7 +20,7 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(body),
       }),
       data = await response.json();
 
@@ -45,10 +45,8 @@
     // Otherwise, something else went wrong. Give a vague "try again" message here.
   }
 
-  /**
-   * Changes state of parent to signing up.
-   */
-  function switchToSignUp(event: Event) {
+  function switchToSignUp() {
+    signingUp = true;
   }
 </script>
 
@@ -61,7 +59,7 @@
     </label>
 
     <label>
-      Password
+      Password  
 
       <input type="password" name="password" id="password" placeholder="PeterParker" required>
     </label>
@@ -69,8 +67,8 @@
     <input type="submit" value="Login">
 
     <div>
-      No account?
-      <button onclick={switchToSignUp}>Sign up!</button>
+      No account?<br>
+      <button type="button" onclick={switchToSignUp}>Sign up!</button>
     </div>
   </form>
 
@@ -105,7 +103,6 @@
   }
 
   input[type=submit] {
-    width: 100px;
     align-self: center;
   }
   @media (prefers-color-scheme: dark) {
