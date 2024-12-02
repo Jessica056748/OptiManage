@@ -9,11 +9,13 @@ The backend error message should **not** specify which field - the email or pass
 - Ensure the Vite dist directory (after npm build) can communicate with the backend
 - Get authentication for manager logins to work
   - Check why 
+- Debug manager account creation
 - Add notification functionality
   - Figure out a way to add notifications to the context
   - Animate notifications
   - Automatically remove notifications after a short time
-
+- Code the backend function that fetches all shifts for the current month
+- Display the different months and days in home(shouldn't need DB for this)
 ## Concerns or Questions
 
 Is dbinfo.txt supposed to be the .env file? If so, should we write a note to convert it to .env and fill the values at the top of that file?

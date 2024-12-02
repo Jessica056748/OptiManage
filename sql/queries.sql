@@ -1,161 +1,217 @@
 -- SCHEMA: Optimize
-
 -- DROP SCHEMA IF EXISTS "Optimize" ;
 
-CREATE SCHEMA IF NOT EXISTS "Optimize"
-    AUTHORIZATION postgres;
-set search_path to "Optimize";
+-- select * from "Optimize".employee, "Optimize".manager;
+-- select current_database();
+-- select
+--   table_name
+-- from
+--   information_schema.tables;
+-- insert into
+--   shift
+-- values
+--   (2, 1, 12, 111111111, 123456789, 5);
+-- set search_path to Optimize;
+create SCHEMA IF not exists "Optimize" authorization postgres;
 
-CREATE TABLE "Optimize".Employee (  
-  SIN       CHAR (9)                       primary key,  
-  Name      VARCHAR (15)                       NOT NULL,  
-  Phone       CHAR(10),                        
-  Address        VARCHAR (100)                       NOT NULL,  
-  DepartmentId      INT,   
-  Email       VARCHAR (50)                       NOT NULL, 
-  Password      VARCHAR(30)                       NOT NULL, 
-  MSIN      Varchar(9)                       NOT NULL,
-  Rate      Decimal(6,2)                       NOT NULL
-);
+set
+  search_path to "Optimize";
 
-CREATE TABLE "Optimize".Manager(  
-SIN CHAR (9) Primary Key,  
-Name VARCHAR (15) NOT NULL,  
-Phone CHAR(10),  
-Address  VARCHAR (100) NOT NULL,  
-DepartmentId INT,   
-Email VARCHAR (50) NOT NULL, 
-Password VARCHAR(30) NOT NULL); 
+create table
+  "Optimize".Employee (
+    sin char(9) primary key,
+    Name varchar(15) not null,
+    Phone char(10),
+    Address varchar(100) not null,
+    DepartmentId int,
+    Email varchar(50) not null,
+    Password varchar(30) not null,
+    MSIN varchar(9) not null,
+    Rate decimal(6, 2) not null
+  );
 
-Alter Table "Optimize".Employee
-Add foreign key (MSIN) References "Optimize".Manager(SIN);
+create table
+  "Optimize".Manager (
+    sin char(9) primary Key,
+    Name varchar(15) not null,
+    Phone char(10),
+    Address varchar(100) not null,
+    DepartmentId int,
+    Email varchar(50) not null,
+    Password varchar(30) not null
+  );
 
-CREATE TABLE "Optimize".Department (  
-DepartmentId INT Primary Key);
+alter table "Optimize".Employee Add foreign key (MSIN) references "Optimize".Manager (sin);
 
+create table
+  "Optimize".Department (DepartmentId int primary Key);
 
-Alter Table "Optimize".Employee
-Add Foreign key (DepartmentID) references "Optimize".Department(DepartmentID);
+alter table "Optimize".Employee Add foreign key (DepartmentID) references "Optimize".Department (DepartmentID);
 
-Alter Table "Optimize".Manager
-Add Foreign key (DepartmentID) references "Optimize".Department(DepartmentID);
+alter table "Optimize".Manager Add foreign key (DepartmentID) references "Optimize".Department (DepartmentID);
 
-CREATE TABLE "Optimize".DEPENDANT (  
-Name VARCHAR (15),  
-ESIN CHAR (9),
-primary key (Name, ESIN),
-FOREIGN KEY (ESIN) REFERENCES "Optimize".Employee(SIN)); 
+create table
+  "Optimize".DEPENDANT (
+    Name varchar(15),
+    ESIN char(9),
+    primary key (Name, ESIN),
+    foreign KEY (ESIN) references "Optimize".Employee (sin)
+  );
 
-CREATE TABLE PAYROLL (  
-SIN CHAR (9) NOT NULL,  
-Week INT CHECK(Week>=1 AND Week <= 52), 
-Quantity Decimal(6,2),
-Primary key (SIN, Week),
-FOREIGN key (SIN) REFERENCES Employee(SIN));
+create table
+  PAYROLL (
+    sin char(9) not null,
+    Week int check (
+      Week >= 1
+      and Week <= 52
+    ),
+    Quantity decimal(6, 2),
+    primary key (sin, Week),
+    foreign key (sin) references Employee (sin)
+  );
 
-CREATE TABLE TIP (  
-Date  DATE  NOT NULL,  
-SIN  CHAR (9)  NOT NULL, 
-Quantity  DECIMAL (6,2),  
-PRIMARY KEY (Date, SIN),
-FOREIGN KEY (SIN) REFERENCES EMPLOYEE(SIN));
+create table
+  TIP (
+    date date not null,
+    sin char(9) not null,
+    Quantity decimal(6, 2),
+    primary KEY (date, sin),
+    foreign KEY (sin) references EMPLOYEE (sin)
+  );
 
-CREATE TABLE SCHEDULE (  
-Week INT CHECK(Week>=1 AND Week <= 52),                            
-SIN  CHAR(9) NOT NULL,  
-Update_SIN CHAR (9) NOT NULL,  
-PRIMARY KEY (SIN, Week),
-FOREIGN KEY (SIN) REFERENCES EMPLOYEE(SIN),
-Foreign key (Update_SIN) REFERENCES MANAGER (SIN));
+create table
+  SCHEDULE (
+    Week int check (
+      Week >= 1
+      and Week <= 52
+    ),
+    sin char(9) not null,
+    Update_SIN char(9) not null,
+    primary KEY (sin, Week),
+    foreign KEY (sin) references EMPLOYEE (sin),
+    foreign key (Update_SIN) references MANAGER (sin)
+  );
 
-CREATE TABLE Shift (  
-Day INT Check(Day >= 1 AND day <=31) NOT NULL,  
-Week INT CHECK(Week>=1 AND Week <= 52) NOT NULL,
-Month VARCHAR(9) NOT NULL, 
-MSIN CHAR(9) NOT NULL,  
-ESIN CHAR(9) NOT NULL,  
-LENGTH DECIMAL(6,2),                                             
-PRIMARY KEY (Day, Week, Month, ESIN),
-FOREIGN KEY (ESIN) REFERENCES EMPLOYEE(SIN),
-FOREIGN KEY (MSIN) REFERENCES MANAGER (SIN));
+create table
+  Shift (
+    day int check (
+      day >= 1
+      and day <= 31
+    ) not null,
+    Week int check (
+      Week >= 1
+      and Week <= 52
+    ) not null,
+    month varchar(9) not null,
+    MSIN char(9) not null,
+    ESIN char(9) not null,
+    LENGTH decimal(6, 2),
+    primary KEY (day, Week, month, ESIN),
+    foreign KEY (ESIN) references EMPLOYEE (sin),
+    foreign KEY (MSIN) references MANAGER (sin)
+  );
 
-CREATE TABLE Availability(
-SIN Char(9) NOT NULL,
-Weekday CHAR(10) NOT NULL,
-EMP_START TIME NOT NULL,
-EMP_END TIME NOT NULL,
-Primary key (SIN, Weekday),
-Foreign key (SIN) references EMPLOYEE(SIN));
+create table
+  Availability (
+    sin char(9) not null,
+    Weekday char(10) not null,
+    EMP_START time not null,
+    EMP_END time not null,
+    primary key (sin, Weekday),
+    foreign key (sin) references EMPLOYEE (sin)
+  );
 
-CREATE TABLE Supplier (  
-SupplierName VARCHAR (50) NOT NULL,  
-PRIMARY KEY (SupplierName)); 
+create table
+  Supplier (
+    SupplierName varchar(50) not null,
+    primary KEY (SupplierName)
+  );
 
-CREATE TABLE Item (  
-ItemCode INT  NOT NULL,  
-SupplierName VARCHAR (50),  
-Price DECIMAL(6,2),                                              
-PRIMARY KEY (ItemCode),
-FOREIGN KEY (SupplierName) REFERENCES SUPPLIER(SUPPLIERNAME));
+create table
+  Item (
+    ItemCode int not null,
+    SupplierName varchar(50),
+    Price decimal(6, 2),
+    primary KEY (ItemCode),
+    foreign KEY (SupplierName) references SUPPLIER (SUPPLIERNAME)
+  );
 
-CREATE TABLE SOLD_BY (  
-ItemCode INT NOT NULL,  
-SIN CHAR (9)  NOT NULL,  
-PRIMARY KEY (ItemCode, SIN),
-FOREIGN KEY (SIN) REFERENCES EMPLOYEE(SIN),
-FOREIGN KEY (ITEMCODE) REFERENCES ITEM (ITEMCODE));
+create table
+  SOLD_BY (
+    ItemCode int not null,
+    sin char(9) not null,
+    primary KEY (ItemCode, sin),
+    foreign KEY (sin) references EMPLOYEE (sin),
+    foreign KEY (ITEMCODE) references ITEM (ITEMCODE)
+  );
 
-Create table Task (
-TaskId	int Not Null,
-Primary key (TaskId));
+create table
+  Task (TaskId int not null, primary key (TaskId));
 
-CREATE TABLE CATEGORIES (  
-ItemCode INT NOT NULL,  
-Categories VARCHAR(30) NOT NULL,  
-PRIMARY KEY (ItemCode),
-FOREIGN KEY (ITEMCODE) REFERENCES ITEM (ITEMCODE));
+create table
+  CATEGORIES (
+    ItemCode int not null,
+    Categories varchar(30) not null,
+    primary KEY (ItemCode),
+    foreign KEY (ITEMCODE) references ITEM (ITEMCODE)
+  );
 
-CREATE TABLE PERFORMED_BY (  
-SIN CHAR (9) NOT NULL,   
-TaskID Int NOT NULL,   
-PRIMARY KEY (SIN, TaskId),
-FOREIGN KEY (SIN) REFERENCES EMPLOYEE(SIN),
-FOREIGN KEY (TASKID) REFERENCES TASK (TASKID));
+create table
+  PERFORMED_BY (
+    sin char(9) not null,
+    TaskID int not null,
+    primary KEY (sin, TaskId),
+    foreign KEY (sin) references EMPLOYEE (sin),
+    foreign KEY (TASKID) references TASK (TASKID)
+  );
 
 -- Create table Request_FROMMSIN (
--- ID int NOt Null, 
+-- ID int NOt Null,
 -- Week INT CHECK(Week>=1 AND Week <= 52),
 -- Day	 int check(day >= 1 AND day<=31),
--- FromSIN	CHar(9)	NOt null, 
--- ToSIN Char(9) Not null, 
--- Type	varchar(30), 
+-- FromSIN	CHar(9)	NOt null,
+-- ToSIN Char(9) Not null,
+-- Type	varchar(30),
 -- Acknowledged	boolean not null,
 -- Primary key (ID));
-
 -- Create table Request_ESIN (
--- ID int NOt Null, 
+-- ID int NOt Null,
 -- Week INT CHECK(Week>=1 AND Week <= 52),
 -- Day	 int check(day >= 1 AND day<=31),
--- FromSIN	CHar(9)	NOt null, 
--- ToSIN Char(9) Not null, 
--- Type	varchar(30), 
+-- FromSIN	CHar(9)	NOt null,
+-- ToSIN Char(9) Not null,
+-- Type	varchar(30),
 -- Acknowledged	boolean not null,
 -- Primary key (ID));
+insert into
+  Department
+values
+  (3);
 
-Insert into Department
-Values (3);
+insert into
+  Manager
+values
+  (
+    111111111,
+    'Peter Parker',
+    4032345677,
+    '2717 Hocus Pocus Drive, Calgary, Alberta, T2A45K',
+    3,
+    'PParker@optimanage.ca',
+    'PeterParker'
+  );
 
-Insert into Manager
-Values (111111111, 'Peter Parker', 4032345677, '2717 Hocus Pocus Drive, Calgary, Alberta, T2A45K', 3, 'PParker@optimanage.ca', 'PeterParker');
-
-
-
-Insert into Employee
-Values (123456789, 'Victoria Parker', 4031233456, '2716 Hocus Pocus Drive, Calgary, Alberta, T2A45K', 3, 'VParker@optimanage.ca', 'VictoriaParker', 111111111, 19.50);
-
-
-
-
-
-
-
+insert into
+  Employee
+values
+  (
+    123456789,
+    'Victoria Parker',
+    4031233456,
+    '2716 Hocus Pocus Drive, Calgary, Alberta, T2A45K',
+    3,
+    'VParker@optimanage.ca',
+    'VictoriaParker',
+    111111111,
+    19.50
+  );
