@@ -38,7 +38,7 @@
 <style>
   main {
     background-size: cover;
-    background-position: bottom;
+    background-position: center;
   }
 
   .authenticated {
