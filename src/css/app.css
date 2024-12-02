@@ -55,6 +55,7 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #535bf2;
 }
@@ -68,7 +69,8 @@ h1 {
   padding: 2em;
 }
 
-button, input {
+button,
+input {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: .5em .8em;
@@ -79,13 +81,15 @@ button, input {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:hover, input:hover {
+
+button:hover,
+input:hover {
   border-color: hsl(237, 100%, 70%);
 }
+
 button:focus,
 inut:focus,
-button:focus-visible
-input:focus-visible {
+button:focus-visible input:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
@@ -95,9 +99,11 @@ input:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: hsl(237, 100%, 73%);
   }
+
   button {
     background-color: #f9f9f9;
   }

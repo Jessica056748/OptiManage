@@ -5,12 +5,20 @@
 </script>
 
 <div class="home">
-  
+  <Nav />
+  <div class="content">
+    <Bar />
+    <Calendar />
+  </div>
 </div>
 
 <style>
 .home {
   display: flex;
   flex-direction: row;
+}
+.content {
+  display: flex;
+  flex-direction: column;
 }
 </style>
