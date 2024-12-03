@@ -283,10 +283,154 @@ app.post('/add-request', authenticateToken, async (req, res) => {
         console.error('Error adding request: ', error.message);
         res.status(500).json({error: 'Failed to add request'});
     }
-
-
-
 });
+
+// authorizeRequest notifies the sender of the request about the approval/rejection of the request.
+app.patch('/authorize-request/:id', authenticateToken, async (req, res) => {
+    const requestId = parseInt(req.params.id, 10); // Parse String into int for processing
+    const {authorized} = req.body;      // Authorized is either true or false
+    const toSin = req.user.sin;         // Manager SIN from JWT
+
+    try {
+        // Validate request Id
+        if (isNaN(requestId)) {
+            return res.status(400).json({error: 'Invalid request ID'});
+        }
+
+        // Validate authorized status
+        if (typeof authorized !== 'boolean') {
+            return res.status(400).json({error: 'Authorized value must be true or false'});
+        }
+
+
+        // Update the authorized status of the request
+        const updateRequestQuery = `
+            UPDATE request
+            SET authorized = $1
+            WHERE id = $2 AND tosin = $3
+            RETURNING fromsin, type
+        `;
+        const updateResult = await pool.query(updateRequestQuery, [authorized, requestId, toSin]);
+
+        if (updateResult.rows.length === 0) {
+            return res.status(404).json({error: 'Request not found or you are not authorized to update it'});
+        }
+
+        const {fromsin, type} = updateResult.rows[0];   // Get employee SIN and request type
+        
+        // Create a notification for the employee
+        const notificationQuery = `
+            INSERT INTO notifications (to_sin, request_id, message)
+            VALUES ($1, $2, $3)
+        `;  // If true is authorized, if false or null it's rejected.
+        const notificationMessage = `Your request for ${type} has been ${authorized ? 'approved' : 'rejected'}`;
+        const notificationValues = [fromsin, requestId, notificationMessage];
+        await pool.query(notificationQuery, notificationValues);
+
+        res.status(200).json({message: `Request ${authorized ? 'approved' : 'rejected'} successfully and employee notified.`});
+    } catch (error) {
+        console.error('Error authorizing request: ', error.message);
+        res.status(500).json({error: 'Failed to authorize request'});
+    }
+});
+
+// Endpoint for managers to fetch notifications (descending order)
+app.get('/notifications/manager', authenticateToken, async (req, res) => {
+    const {sin} = req.user; // Manager SIN from JWT
+    try {
+        const query = `
+            SELECT id, message, created_at, read
+            FROM notifications
+            WHERE to_msin = $1
+            ORDER BY created_at DESC
+        `;
+        const result = await pool.query(query, [sin]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('Error fetching manager notifications: ', error.message);
+        res.status(500).json({error: 'Failed to fetch notifications'});
+    }
+});
+
+// Endpoint for employees to fetch notifications (descending order)
+app.get('/notifications/employee', authenticateToken, async (req, res) => {
+    const {sin} = req.user; // Employee SIN from JWT
+    try {
+        const query = `
+            SELECT id, message, created_at, read
+            FROM notifications
+            WHERE to_sin = $1
+            ORDER BY created_at DESC
+        `;
+        const result = await pool.query(query, [sin]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('Error fetching employee notifications: ', error.message);
+        res.status(500).json({error: 'Failed to fetch notifications'});
+    }
+});
+
+// Endpoint to mark notifications as READ
+app.patch('/notifications/:id/read', authenticateToken, async(req, res) => {
+    const id = parseInt(req.params.id, 10); // Parse String into int for processing
+
+    try {
+        // Validate id
+        if (isNaN(id)) {
+            return res.status(400).json({error: 'Invalid notification ID'});
+        }
+        const query = `
+            UPDATE notifications
+            SET read = TRUE
+            WHERE id = $1
+        `;
+        const result = await pool.query(query, [id]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({error: 'Notification not found or already marked as read'});
+        }
+        res.status(200).json({message: 'Notification marked as read'});
+    } catch (error) {
+        console.error('Error marking notifications as read: ', error.message);
+        res.status(500).json({error: 'Failed to update notification'});
+    }
+});
+
+// Endpoint for employees to update their availability
+app.post('/availability', authenticateToken, async (req, res) => {
+    const {sin} = req.user; // Extract SIN from JWT
+    const {weekday, emp_start, emp_end} = req.body; // Get from request's body
+
+    try {
+        // Validate inputs
+        if (!weekday || !emp_start || !emp_end) {
+            return res.status(400).json({error: 'Weekday, from, and to values are required'});
+        }
+        // Ensure from is before to
+        if (new Date(`2024-01-01T${emp_start}Z`) >= new Date(`2024-01-01T${emp_end}Z`)) {
+            return res.status(400).json({error: 'Start time must be earlier than end time'});
+        }
+
+        // Query to insert or update availability
+        const query = `
+            INSERT INTO availability (sin, weekday, emp_start, emp_end)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (sin, weekday)
+            DO UPDATE SET emp_start = $3, emp_end = $4;
+        `;
+
+        // Execute query with parameters
+        await pool.query(query, [sin, weekday, emp_start, emp_end]);
+
+        // Send success response
+        res.status(200).json({message: 'Availability updated successfully'});
+    } catch (error) {
+        console.error('Error updating availability: ', error.message);
+        res.status(500).json({error: 'Failed to update availability'});
+    }
+});
+
+
 
 // Start the server
 app.listen(PORT, () => {                    // PORT to listen for requests
