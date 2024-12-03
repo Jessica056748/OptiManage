@@ -430,6 +430,49 @@ app.post('/availability', authenticateToken, async (req, res) => {
     }
 });
 
+// Endpoint for managers to fetch employee availability
+app.get('/availability', authenticateToken, async (req, res) => {
+    const {weekday, sin: employeeSin} = req.query; // Extract filters from query parameters
+    const {sin, role} = req.user;   // Extract manager SIN and role from JWT
+
+    try {
+        // Make sure only managers can access this endpoint
+        if (role !== 'manager') {
+            return res.status(403).json({error: 'Access denied. Only managers can view availability'});
+        }
+
+        // Build dynamic query based on filters
+        let query = `
+            SELECT sin, weekday, emp_start, emp_end
+            FROM availability
+        `;
+        const params = [];
+
+        if (weekday || employeeSin) {
+            query += ' WHERE ';
+            if (weekday) {
+                params.push(weekday);
+                query += `weekday = $${params.length}`;
+            }
+            if (employeeSin) {
+                params.push(employeeSin);
+                if (weekday) query += ' AND ';
+                query += `sin = $${params.length}`;
+            }
+        }
+        query += ' ORDER BY weekday, emp_start';
+
+        // Execute query
+        const result = await pool.query(query, params);
+
+        // Send response
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('Error fetching availability: ', error.message);
+        res.status(500).json({error: 'Failed to fetch availability'});
+    }
+})
+
 
 
 // Start the server
