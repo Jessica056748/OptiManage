@@ -471,9 +471,328 @@ app.get('/availability', authenticateToken, async (req, res) => {
         console.error('Error fetching availability: ', error.message);
         res.status(500).json({error: 'Failed to fetch availability'});
     }
-})
+});
 
+// Endpoint for managers to create a schedule
+app.post('/schedule', authenticateToken, async (req, res) => {
+    const managerSin = req.user.sin; // Extract SIN 
+    const role = res.user.role; // Extract role from JWT
+    const {employeeSin, week} = req.body; // Extract inputs from request body
 
+    try {
+        // Make sure only managers can create schedules
+        if (role != 'manager') {
+            return res.status(403).json({error: 'Access denied. Only managers can create schedules'});
+        }
+        // Validate inputs
+        if (!week || !employeeSin) {
+            return res.status(400).json({error: 'Week and employee SIN are required'});
+        }
+        // Check if employee exists
+        const employeeQuery = `SELECT * FROM employee WHERE sin = $1`;
+        const employeeResult = await pool.query(employeeQuery, [employeeSin]);
+        if (employeeResult.rows.length === 0) {
+            return res.status(404).json({error: 'Employee not found'});
+        }
+
+        // Check employee availability for the week
+        const availabilityCheckQuery = `
+            SELECT COUNT(*) AS count
+            FROM availability
+            WHERE sin = $1
+        `;
+        const availabilityResult = await pool.query(availabilityCheckQuery, [employeeSin]);
+        const hasAvailability = parseInt(availabilityResult.rows[0].count, 10) > 0;
+
+        // If employee has availability, ensure they have at least one available time slot for the week.
+        if (hasAvailability) {
+            const availabilityValidationQuery = `
+                SELECT *
+                FROM availability
+                WHERE sin = $1
+            `;
+            const availabilityValidationResult = await pool.query(availabilityValidationQuery, [employeeSin]);
+
+            if (availabilityValidationResult.rows.length === 0) {
+                return res.status(400).json({error: 'Employee has no available time slots for the given week'});
+            }
+        }
+        // Insert or update the schedule
+        const scheduleQuery = `
+            INSERT INTO schedule (week, sin, update_sin)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (week, sin)
+            DO UPDATE SET update_sin = $3
+        `;
+        await pool.query(scheduleQuery, [week, employeeSin, managerSin]);
+        res.status(200).json({message: 'Schedule created or updated successfully'});
+    } catch (error) {
+        console.error('Error creating/updating schedule: ', error.message);
+        res.status(500).json({error: 'Failed to create/update schedule'});
+    }
+});
+
+// Mapping weekdays to integers
+const weekdayMap = {
+    1: "Monday",
+    2: "Tuesday",
+    3: "Wednesday",
+    4: "Thursday",
+    5: "Friday",
+    6: "Saturday",
+    7: "Sunday"
+};
+
+// Endpoint for managers to create shifts
+app.post('/shift', authenticateToken, async (req, res) => {
+    const {sin: msin} = req.user;   // Manager SIN from JWT
+    const {day, week, month, esin, length} = req.body;  // Get data from params
+
+    try {
+        // Validate inputs
+        if (!day || !week || !month || !esin || !length) {
+            return res.status(400).json({error: 'All fields (day, week, month, esin, length) are required'});
+        }
+        // Check that day and week are valid integers
+        const dayInt = parseInt(day, 10);
+        const weekInt = parseInt(week, 10);
+        const monthInt = parseInt(month, 10);
+
+        if (isNaN(dayInt) || dayInt < 1 || dayInt > 7) {
+            return res.status(400).json({error: 'Invalid day value. It must be an integer between 1 and 7'});
+        }
+        if (isNaN(weekInt) || weekInt < 1 || weekInt > 52) {
+            return res.status(400).json({error: 'Invalid week value. It must be an integer between 1 and 52'});
+        }
+        if (isNaN(monthInt) || monthInt < 1 || monthInt > 12) {
+            return res.status(400).json({error: 'Invalid month value. It must be an integer between 1 and 12'});
+        }
+        if (length <= 0) {
+            return res.status(400).json({error: 'Shift length must be greater than 0'});
+        }
+
+        // Check if employee is scheduled for the given week
+        const scheduleCheckQuery = `SELECT * FROM schedule WHERE sin = $1 AND week = $2`;
+        const scheduleResult = await pool.query(scheduleCheckQuery, [esin, week]);
+
+        if (scheduleResult.rows.legth === 0) {
+            return res.status(400).json({error: 'Employee is not scheduled for this week'});
+        }
+        // Map day integer to weekday string
+        const weekday = weekdayMap[dayInt]
+
+        // Validate against employee availability
+        const availabilityCheckQuery = `
+            SELECT emp_start, emp_end
+            FROM availability
+            WHERE sin = $1 AND weekday = $2
+        `;
+        const availabilityResult = await pool.query(availabilityCheckQuery, [esin, weekday]);
+
+        if (availabilityResult.rows.length > 0) {
+            const {emp_start, emp_end} = availabilityResult.rows[0];    // Assign the values from the query
+
+            // Check if the shift length fits within the available time
+            const shiftEnd = parseFloat(emp_start) + parseFloat(length);
+            if (shiftEnd > emp_end) {
+                return res.status(400).json({error: 'Shift exceeds employee availability'});
+            }
+        }
+
+        // Insert shift into table
+        const insertShiftQuery = `
+        INSERT INTO shift (day, week, month, msin, esin, length)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        `;
+        await pool.query(insertShiftQuery, [day, week, month, msin, esin, length]);
+        res.status(201).json({message: 'Shift created scuccessfully'});
+    } catch (error) {
+        console.error('Error creating shift: ', error.message);
+        res.status(500).json({error: 'Failed to create shift'});
+    }
+});
+
+// Endpoint for employees to view their shifts
+app.get('/shifts', authenticateToken, async (req, res) => {
+    const {sin: esin} = req.user; // Get employee sin from JWT
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // Get month as an integer (starts from 0)
+
+    try {
+        // Query to fetch monthly shifts for employee
+        const query = `
+            SELECT day, week, month, length
+            FROM shift
+            WHERE esin = $1 AND month = $2
+        `;
+        const result = await pool.query(query, [esin, currentMonth]);
+
+        // Format data for calendar view in response
+        const shifts = result.rows.map(shift => ({
+            day: shift.day,
+            week: shift.week,
+            month: shift.month,
+            length: shift.length
+        }));
+
+        // Send response using formatted data
+        res.status(200).json(shifts);
+    } catch (error) {
+        console.error('Error fetching shifts: ', error.message);
+        res.status(500).json({error: 'Failed to fetch shifts'});
+    }
+});
+
+// Endpoint for managers to view shifts in their departments
+app.get('/shifts/department', authenticateToken, async (req, res) => {
+    const {sin: msin} = req.user; // Manager sin from JWT
+    const {week, month} = req.query; // Optional filters for week and month
+
+    try {
+        // Base query to fetch shifts for employees in the manager's department
+        let query = `
+            SELECT s.day, s.week, s.month, s.length, s.esin, employee.name AS employee_name
+            FROM shift AS s
+            INNER JOIN employee ON shift.esin = employee.sin
+            INNER JOIN department ON employee.departmentid = department.departmentid
+            WHERE department.msin = $1
+        `;
+        const params = [msin];
+
+        // Add filters for week and/or month if provided
+        if (week) {
+            query += ` AND s.week = $${params.length + 1}`;
+            params.push(week);
+        };
+        if (month) {
+            query += `AND s.month = $${params.length + 1}`;
+            params.push(month);
+        }
+        // Order shifts by week and day
+        query += 'ORDER BY shift.week, shift.day';
+
+        const result = await pool.query(query, params);
+
+        // Format response
+        const shifts = result.rows.map(shift => ({
+            day: shift.day,
+            week: shift.week,
+            month: shift.month,
+            length: shift.length,
+            employee: {
+                sin: shift.esin,
+                name: shift.employee_name
+            }
+        }));
+        // Send response with formatted shifts
+        res.status(200).json({shifts});
+    } catch (error) {
+        console.error('Error fetching department shifts: ', error.message);
+        res.status(500).json({error: 'Failed to get department shifts'});
+    }
+});
+
+// Endpoint for managers to modify shifts
+app.put('/shift', authenticateToken, async (req, res) => {
+    const {sin: msin} = req.user;   // Get data from JWT
+    const {day, week, month, esin, length} = req.body; // Get data from request body
+
+    try {
+        // Validate inputs
+        if (!day || !week || !month || !esin || !length) {
+            return res.status(400).json({error: 'All fields are required'});
+        }
+
+        // Verify the shift exists
+        const shiftQuery = `
+            SELECT s.*, e.departmentid
+            FROM shift AS s
+            JOIN employee AS e ON s.esin = e.sin
+            WHERE s.day = $1 AND s.week = $2 AND s.month = $3 AND s.esin = $4
+        `;
+        const shiftResult = await pool.query(shiftQuery, [day, week, month, esin]);
+
+        if (shiftResult.rows.length === 0) {
+            return res.status(404).json({error: 'Shift not found'});
+        }
+
+        const shift = shiftResult.rows[0];
+
+        // Verify that the manager belongs to the same department as the employee
+        const employeeDeptId = shift.departmentid;
+        const managerDeptQuery = `
+            SELECT departmentid
+            FROM manager
+            WHERE sin = $1
+        `;
+        const managerResult = await pool.query(managerDeptQuery, [msin]);
+        if (managerResult.rows.length === 0 || managerResult.rows[0].departmentid !== employeeDeptId) {
+            return res.status(403).json({error: 'You do not have permission to modify this shift'});
+        }
+
+        // Update the shift (If a shift exists, the only thing to modify is the length of the shift)
+        const updateShiftQuery = `
+            UPDATE shift
+            SET length = $5
+            WHERE day = $1 AND week = $2 AND month = $3 AND esin = $4
+        `;
+        await pool.query(updateShiftQuery, [day, week, month, esin, length]);
+
+        res.status(200).json({message: 'Shift updated successfully'});
+    } catch (error) {
+        console.error('Error modifying shift: ', error.message);
+        res.status(500).json({error: 'Failed to modify shift'});
+    }
+});
+
+// Endpoint for managers to delete a shift
+app.delete('/shift', authenticateToken, async (req, res) => {
+    const {sin: msin} = req.user // Manager sin from JWT
+    const {day, week, month, esin} = req.body; // Get data from request body
+
+    try {
+        // Validate inputs
+        if (!day || !week || !month || !esin) {
+            return res.status(400).json({error: 'All fields are required'});
+        }
+        // Check if the shift exists
+        const shiftQuery = `
+            SELECT s.*, e.departmentid
+            FROM shift s
+            JOIN employee e ON s.esin = e.sin
+            WHERE s.day = $1 AND s.week = $2 AND s.month = $3 AND s.esin = $4
+        `;
+        const shiftResult = await pool.query(shiftQuery, [day, week, month, esin]);
+
+        if (shiftResult.rows.length === 0) {
+            return res.status(404).json({error: 'Shift not found'});
+        }
+        const shift = shiftResult.rows[0];
+
+        // Verify that the manager and employee share the same dept.
+        const employeeDeptId = shift.departmentid;
+        const managerDeptQuery = `
+            SELECT departmentid
+            FROM manager
+            WHERE sin = $1
+        `;
+        const managerResult = await pool.query(managerDeptQuery, [msin]);
+        if (managerResult.rows.length === 0) {
+            return res.status(403).json({error: 'You do not have permission to delete this shift'});
+        }
+        // Delete the shift
+        const deleteShiftQuery = `
+            DELETE FROM shift
+            WHERE day = $1 AND week = $2 AND month = $3 AND esin = $4
+        `;
+        await pool.query(deleteShiftQuery, [day, week, month, esin]);
+        
+        res.status(200).json({message: 'Shift deleted successfully'});
+    } catch (error) {
+        console.error('Error deleting shift: ', error.message);
+        res.status(500).json({error: 'Failed to delete shift'});
+    }
+});
 
 // Start the server
 app.listen(PORT, () => {                    // PORT to listen for requests
