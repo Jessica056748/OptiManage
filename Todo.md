@@ -12,5 +12,3 @@ By convention, npm i is usually run at the root of the project, not in a sub-dir
 ## Concerns or Questions
 
 - Is dbinfo.txt supposed to be the .env file? If so, should we write a note to convert it to .env and fill the values at the top of that file?
-
-BLAH BLAH BLAH TEST PUSH
