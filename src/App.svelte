@@ -16,7 +16,9 @@
   const { role } = globalState
   
   const 
-    lightBackgrounds = ['beach', 'desert', 'glaciers', 'precipice', 'sea', 'structures'],
+  // lightBackgrounds = ['beach', 'desert', 'glaciers', 'precipice', 'sea', 'structures'],
+  // Removed some of the images that don't contrast well with the OptiManage title.
+    lightBackgrounds = ['beach', 'desert', 'glaciers', 'precipice'],
     darkBackgrounds = ['desert', 'galaxy'],
     darkPreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches,
     imageDir = darkPreferred ? 'dark' : 'light',

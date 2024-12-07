@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { Role } from "../../role";
-  import { globalState } from "../../state.svelte";
-  let { signingUp = $bindable() }: { signingUp: boolean} = $props()
+  import { Role } from '../../role'
+  import { globalState } from '../../state.svelte'
+  let { signingUp = $bindable() }: { signingUp: boolean } = $props()
   const { VITE_BACKEND_PORT: PORT } = import.meta.env
 
   /**
@@ -10,90 +10,102 @@
   async function signUp(event: SubmitEvent) {
     event.preventDefault()
     // @ts-ignore
-    const body = Object.fromEntries(new FormData(event.target)) 
+    const body = Object.fromEntries(new FormData(event.target))
     let status
 
     try {
       const response = await fetch(`http://localhost:${PORT}/create-manager`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body),
-      }),
-      data = await response.json();
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        }),
+        data = await response.json()
 
-      ({status} = response)
+      ;({ status } = response)
     } catch (error) {
       console.error(error)
-      return 
+      return
       // TODO: notify user
       // notify('❌ Something went wrong, please try again later', 'error')
     }
 
     if (status === 401) {
       // Operation was unsuccessful due to a client error.
-      return 
+      return
     }
 
     if (status === 200) {
       // Operation was successful.
-      globalState.role = Role.Manager;
+      globalState.role = Role.Manager
     }
 
     // Otherwise, something else went wrong. Give a vague "try again" message here.
   }
 
   function switchToLogin() {
-    signingUp = false;
+    signingUp = false
   }
 </script>
 
-  <form onsubmit={signUp}>
-    <!-- TODO: remove "required" from nullable fields, especially department id. -->
-    <h2>Create a Manager Account</h2>
+<form onsubmit={signUp}>
+  <!-- TODO: remove "required" from nullable fields, especially department id. -->
+  <h2>Create a Manager Account</h2>
 
-    <label>
-      Name
-      <input type="text" name="name" placeholder="Peter Parker">
-    </label>
-    
-    <label>
-      Phone
-      <input type="tel" minlength="10" maxlength="10" name="phone" placeholder="4032345677" required>
-    </label>
+  <label>
+    Name
+    <input type="text" name="name" placeholder="Peter Parker" required />
+  </label>
 
-    <label>
-      Email
-      <input type="email" name="email" placeholder="PParker@optimanage.ca" required>
-    </label>
-    
-    <label>
-      SIN
-      <input type="password" name="sin" placeholder="111111111" required>
-    </label>
+  <label>
+    Phone
+    <input
+      type="tel"
+      minlength="10"
+      maxlength="10"
+      name="phone"
+      placeholder="4032345677"
+      required
+    />
+  </label>
 
-    <label>
-      Department Id
-      <input type="number" name="departmentid" placeholder="3" required>
-    </label>
-    
-    <label>
-      Password
+  <label>
+    Email
+    <input
+      type="email"
+      name="email"
+      placeholder="PParker@optimanage.ca"
+      required
+    />
+  </label>
 
-      <input type="password" name="password" placeholder="PeterParker" required>
-    </label>
+  <label>
+    SIN
+    <input type="password" name="sin" placeholder="111111111" required />
+  </label>
 
-    <input type="submit" value="Create Account!">
+  <label>
+    Department Id
+    <input type="number" name="departmentid" placeholder="3" required />
+  </label>
 
-    <div>
-      Already have an account?<br>
-      <button type="button" onclick={switchToLogin}>Log in!</button>
-    </div>
-  </form>
-  
+  <label>
+    Password
+
+    <input type="password" name="password" placeholder="PeterParker" required />
+  </label>
+
+  <input type="submit" value="Create Account!" />
+
+  <div>
+    Already have an account?<br />
+    <button type="button" onclick={switchToLogin}>Log in!</button>
+  </div>
+</form>
+
 <style>
-form {
+  form {
     width: 80%;
     border: 1px solid transparent;
 
@@ -109,7 +121,8 @@ form {
     border-color: hsl(237, 100%, 70%);
   }
 
-  h2, div {
+  h2,
+  div {
     align-self: center;
   }
   label {
@@ -118,25 +131,35 @@ form {
     justify-content: flex-start;
     align-items: center;
   }
-  input:not([type=submit]) {
-    width: 100%;  
+  input:not([type='submit']) {
+    width: 100%;
   }
 
-  input[type=submit] {
+  input[type='submit'] {
     align-self: center;
   }
+
+  @media (prefers-color-scheme: light) {
+    form {
+      background-color: hsla(0, 0%, 90%, 0.8);
+    }
+  }
+
   @media (prefers-color-scheme: dark) {
+    form {
+      background-color: hsla(0, 0%, 20%, 0.8);
+    }
     input::placeholder {
       color: hsl(0, 0, 95%);
-    }  
+    }
   }
 
   @media only screen and (min-width: 700px) {
     form {
       width: 45%;
     }
-    input:not([type=submit]) {
-      width: 90%;  
+    input:not([type='submit']) {
+      width: 90%;
     }
   }
 
@@ -144,9 +167,8 @@ form {
     form {
       width: 30%;
     }
-    input:not([type=submit]) {
-      width: 80%;  
+    input:not([type='submit']) {
+      width: 80%;
     }
   }
 </style>
-

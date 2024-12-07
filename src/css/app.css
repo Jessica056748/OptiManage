@@ -89,11 +89,33 @@ input:hover {
 
 button:focus,
 input:focus,
-button:focus-visible input:focus-visible {
+button:focus-visible,
+input:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-/* Media queries */
+.notify {
+  animation: show 0.5s ease forwards;
+}
+.unnotify {
+  animation: hide 0.5s ease forwards;
+}
+
+@keyframes show {
+  to {
+    transform: translateY(-1em);
+  }
+}
+
+@keyframes hide {
+  from {
+    transform: translateY(-1em);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -101,10 +123,11 @@ button:focus-visible input:focus-visible {
   }
 
   a:hover {
-    color: hsl(237, 100%, 73%);
+    color: hsl(237, 100%, 70%);
   }
 
-  button {
+  button,
+  input {
     background-color: #f9f9f9;
   }
 }
