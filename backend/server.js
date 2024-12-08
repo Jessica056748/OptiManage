@@ -237,6 +237,52 @@ app.post('/add-employee', async (req, res) => {
     }
 });
 
+// Endpoint for changing user password
+app.patch('/change-password', authenticateToken, async (req, res) => {
+    const {sin, role} = req.user; // Get sin and role from JWT
+    const {currentPassword, newPassword, confirmPassword} = req.body; // Get passwords from request body
+    
+    try {
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({error: 'All fields are required'});
+        }
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({error: 'New password must match confirmation password'});
+        }
+        // Select table based on user role
+        const table = role === 'manager' ? 'manager' : 'employee'; // if role is manager, choose manager, else choose employee
+
+        // Fetch current hashed password from the database
+        const query = `SELECT password FROM ${table} WHERE sin = $1`;
+        const result = await pool.query(query, [sin]);
+
+        if (result.rows.length === 0) {
+            return res.status(400),json({error: 'User not found'});
+        }
+        
+        const hashedPassword = result.rows[0].password;
+
+        // Compare current password with hashed password
+        const isMatch = await bcrypt.compare(currentPassword, hashedPassword);
+        if (!isMatch) {
+            return res.status(401).json({error: 'Current password is incorrect'});
+        }
+
+        // Hash the new password
+        const saltRounds = 12;
+        const newHashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+        // Update new password in database
+        const updateQuery = `UPDATE ${table} SET password = $1 WHERE sin = $2`;
+        await pool.query(updateQuery, [newHashedPassword, sin]);
+
+        res.status(200).json({message: 'Password updated successfully.'});
+    } catch (error) {
+        console.error('Error changing password: ', error.message);
+        res.status(500).json({error: 'Failed to update password.'});
+    }
+})
+
 // addRequest() function
 app.post('/add-request', authenticateToken, async (req, res) => {
     const {sin} = req.user;                      // Extract sin from req.user (after token validity)
