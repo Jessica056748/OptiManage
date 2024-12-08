@@ -794,6 +794,100 @@ app.delete('/shift', authenticateToken, async (req, res) => {
     }
 });
 
+// Endpoint for calculating payroll
+app.post('/payroll/calculate', authenticateToken, async (req, res) => {
+    const {sin :managerSin} = req.user // get mSin from JWT
+    const {employee_sin} = req.body // Parameter (optional) to calculate for a specific employee
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // Get month of the year
+    const currentWeek = getWeekOfYear(currentDate); // Get the week of the year
+
+    try {
+        // Get departmentid from manager table
+        const departmentidQuery = `SELECT departmentid FROM manager WHERE sin = $1`;
+        const departmentidResult = await pool.query(departmentidQuery, [managerSin]);
+        
+        if (departmentidResult.rows.length === 0) {
+            return res.status(404).json({error: "Manager's department not found"});
+        }
+        const departmentid = departmentidResult.rows[0].departmentid;
+
+        let payrollQuery, params;
+
+        if (employee_sin) {
+            // Calculate payroll for a specific employee
+            payrollQuery = `
+                SELECT e.sin, e.rate, SUM(s.length) AS total_hours
+                FROM employee AS e
+                JOIN shift AS s ON e.sin = s.esin
+                WHERE e.sin = $1 
+                AND s.month = $2 
+                AND s.week <= $3 
+                GROUP BY e.sin, e.rate, s.week;
+            `;
+            params = [employee_sin, currentMonth, currentWeek];
+            console.log(params);
+        } else {
+            // Calculate payroll for all the employees in manager's department
+            payrollQuery = `
+                SELECT e.sin, e.rate, SUM(s.length) AS total_hours
+                FROM employee AS e
+                JOIN shift AS s ON e.sin = s.esin
+                WHERE e.departmentid = $1
+                AND s.month = $2
+                AND s.week <= $3
+                GROUP BY e.sin, e.rate, s.week;
+            `;
+            params = [departmentid, currentMonth, currentWeek];
+            console.log(params);
+        }
+        const payrollResult = await pool.query(payrollQuery, params);
+
+        // If no shifts found
+        if (payrollResult.rows.length === 0) {
+            return res.status(404).json({message: "No shifts found for payroll calculation"});
+        }
+        // Calculate payroll for each employee
+        const payrolls = payrollResult.rows.map(row => ({
+            sin: row.sin,
+            totalHours: row.total_hours,
+            rate: row.rate,
+            totalPay: parseFloat(row.total_hours) * parseFloat(row.rate)
+        }));
+
+        // Insert payrolls into the database
+        for (const payroll of payrolls) {
+            const insertQuery = `
+                INSERT INTO payroll (sin, week, quantity)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (sin, week)
+                DO UPDATE SET quantity = EXCLUDED.quantity;
+            `;
+            await pool.query(insertQuery, [payroll.sin, currentWeek, payroll.totalPay]);
+        }
+        res.status(200).json({
+            message: 'Payroll calculated successfully',
+            payrolls
+        });
+    } catch (error) {
+        console.error('Error calculating payroll: ', error.message);
+        res.status(500).json({error: 'Failed to calculate payroll'});
+    }
+});
+
+// Function to calculate current week of the year
+function getWeekOfYear(date) {
+    // Clone the date
+    // Get first day of the year
+    const firstDayOfYear = new Date(date.getFullYear(),0, 1);
+
+    // Calculate days that passed from start of year (division by milliseconds)
+    const pastDaysOfYear = Math.ceil((date - firstDayOfYear) / 86400000);
+
+    // Calculate the ISO week number (according to the Gregorian calendar)
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay()) / 7);
+}
+
 // Start the server
 app.listen(PORT, () => {                    // PORT to listen for requests
     console.log(`Server is running on http://localhost:${PORT}`);
