@@ -1,4 +1,4 @@
-import { Role } from './role.ts'
+import { Role } from './role'
 
 export const globalState = $state({
   role: Role.None,
