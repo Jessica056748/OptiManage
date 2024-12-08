@@ -49,7 +49,7 @@
     </li>
     {#if role === Role.Manager}
       <li class="employees">
-        <a aria-label="employees" href="home/employees">
+        <a aria-label="employees" href="/home/employees">
           <svg
             viewBox="0 0 640 512"
             class={path.endsWith('employees') ? 'current' : ''}
@@ -63,7 +63,7 @@
     {/if}
   </ul>
 </nav>
-<div>
+<div class="content">
   {@render children()}
 </div>
 
@@ -77,6 +77,19 @@
     flex-direction: column;
     align-items: center;
   }
+
+  .content {
+    margin: 50px;
+    padding: 20px;
+    height: calc(100vh - 100px);
+    border-radius: 20px;
+    flex-grow: 1;
+
+    background-color: hsla(0, 0%, 0%, 0.5);
+    display: flex;
+    flex-direction: column;
+  }
+
   ul {
     margin-top: 10px;
 
@@ -86,6 +99,7 @@
     row-gap: 10px;
   }
   svg {
+    fill: white;
     width: 25px;
     transition: transform 0.3s ease;
   }
@@ -97,16 +111,17 @@
     fill: hsl(237, 100%, 70%);
   }
 
-  @media (prefers-color-scheme: light) {
-    svg {
-      fill: hsl(0, 0%, 14%);
+  /* @media (prefers-color-scheme: light) {
+    nav,
+    .content {
+      background-color: hsla(0, 0%, 100%, 0.87);
+      color: hsl(0, 0%, 14%);
     }
-  }
-  @media (prefers-color-scheme: dark) {
+
     svg {
-      fill: white;
+      fill: black;
     }
-  }
+  } */
 
   @keyframes shake {
     0% {

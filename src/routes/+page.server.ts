@@ -1,11 +1,18 @@
 import { redirect } from '@sveltejs/kit'
-import { VITE_BACKEND_PORT } from '$env/static/private'
+import { VITE_BACKEND_PORT as PORT } from '$env/static/private'
 
 // Redirects the user to the homepage if they are already authenticated.
 export async function load({ locals, cookies }) {
   // TODO: validate session secret.
   const token = cookies.get('jwt'),
-    response = await fetch(`http://localhost:${VITE_BACKEND_PORT}/verify`),
+    response = await fetch(`http://localhost:${PORT}/verify`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    }),
     data = await response.json()
 
   console.log('data:', data)

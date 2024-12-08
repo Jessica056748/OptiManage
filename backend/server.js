@@ -35,35 +35,46 @@ function authenticateToken(req, res, next) {
 }
 
 // Enpoint solely to verify jwt.
-app.get('/verify', async ({ headers: { cookie } }, res) => {
-  if (typeof cookie !== 'string')
-    res.json({
-      statusCode: 401,
-      body: JSON.stringify({ message: 'Unauthorized' }),
-    })
+app.post('/verify', (req, res) => {
+  const authHeader = req.headers['authorization'] // Get authorization header
+  const token = authHeader && authHeader.split(' ')[1] // Extract token
 
-  const cookies = {}
-  cookie.split(';').map(cookieString => {
-    const [key, value] = cookieString.split('=')
-    cookies[key] = value
-  })
-  const { jwt: token } = cookies
+  console.log('req:', req)
 
-  if (typeof token !== 'string')
-    res.json({
-      statusCode: 401,
-      body: JSON.stringify({ message: 'Unauthorized' }),
+  if (!token) {
+    return res.status(401).json({ error: 'Access denied. Token missing.' })
+  }
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    req.user = decoded // Attach decoded payload to the request object
+    console.log('decoded:', decoded)
+    res.status(200).json({
+      decoded,
     })
-
-  await jwt.verify(token, process.env.JWT_SECRET, (error, data) => {
-    console.log('error:', error)
-    console.log('data:', data)
-    res.json({
-      statusCode: 403,
-      body: JSON.stringify({ message: 'Forbidden' }),
-    })
-  })
+  } catch (error) {
+    return res.status(403).json({ error: 'Invalid or expired token.' })
+  }
 })
+// app.post('/verify', (req, res) => {
+//   const { token } = req.body
+
+//   if (typeof token !== 'string')
+//     res.json({
+//       statusCode: 401,
+//       body: JSON.stringify({ message: 'Unauthorized' }),
+//     })
+
+//   jwt.verify(token, process.env.JWT_SECRET, (error, data) => {
+//     console.log('error:', error)
+//     console.log('data:', data)
+//     if (error)
+//       res.json({
+//         statusCode: 401,
+//         body: JSON.stringify({ message: 'Unauthorized' }),
+//       })
+//   })
+// })
 // error || user === undefined || user.username !== ADMIN_USERNAME
 //   ? {
 //       statusCode: 403,

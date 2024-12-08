@@ -35,10 +35,7 @@
     { children } = $props()
 </script>
 
-<main
-  class={role !== Role.None ? 'authenticated' : ''}
-  style="background-image: url({imageUrl});"
->
+<main style="background-image: url({imageUrl});">
   {@render children()}
 </main>
 
@@ -46,9 +43,7 @@
   main {
     background-position: center;
     background-size: cover;
-  }
 
-  main.authenticated {
     display: flex;
     flex-direction: row;
   }
