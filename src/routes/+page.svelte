@@ -1,10 +1,20 @@
 <script lang="ts">
+  import { goto } from '$app/navigation'
+  import { onMount } from 'svelte'
+
   // @ts-ignore
   import Login from '../lib/auth/Login.svelte'
   // @ts-ignore
   import SignUp from '../lib/auth/SignUp.svelte'
   import { Role } from '../role'
   import { globalState } from '../state.svelte'
+
+  const { role } = globalState
+
+  // Redirects user to the
+  $effect.pre(() => {
+    if (role !== Role.None) goto('/home')
+  })
 
   let signingUp: boolean = $state(false)
 </script>
@@ -27,7 +37,7 @@
   .auth-wrapper {
     width: 100%;
     height: 100vh;
-    
+
     display: flex;
     flex-direction: column;
     flex-grow: 1;

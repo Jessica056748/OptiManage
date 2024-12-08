@@ -3,6 +3,7 @@
   import { globalState } from '../../state.svelte'
   import { Role } from '../../role'
   import '../../css/app.css'
+  import { goto } from '$app/navigation'
 
   const { role } = globalState
 
@@ -12,18 +13,26 @@
   $effect(() => {
     path = $page.url.pathname
   })
+
+  function signout(event: Event) {
+    // TODO: clear JWT.
+    globalState.role = Role.None
+    goto('/')
+  }
+
+  function handleKeydown(event: Event) {}
 </script>
 
 <nav>
   <ul>
-    <li class="notifications">
+    <li title="Notifications" class="notifications">
       <svg viewBox="0 0 448 512">
         <path
           d="M224 0c-17.7 0-32 14.3-32 32l0 19.2C119 66 64 130.6 64 208l0 18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416l384 0c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8l0-18.8c0-77.4-55-142-128-156.8L256 32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3l-64 0-64 0c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z"
         />
       </svg>
     </li>
-    <li class="home">
+    <li title="Home" class="home">
       <a aria-label="home" href="/home">
         <svg
           viewBox="0 0 576 512"
@@ -35,7 +44,7 @@
         </svg>
       </a>
     </li>
-    <li class="user">
+    <li title="Manage account" class="account">
       <a aria-label="account" href="/home/account">
         <svg
           viewBox="0 0 448 512"
@@ -48,7 +57,7 @@
       </a>
     </li>
     {#if role === Role.Manager}
-      <li class="employees">
+      <li title="Manage employees" class="employees">
         <a aria-label="employees" href="/home/employees">
           <svg
             viewBox="0 0 640 512"
@@ -61,6 +70,15 @@
         </a>
       </li>
     {/if}
+    <li title="logout" class="logout">
+      <a aria-label="logout" onclick={signout} href={void 0}>
+        <svg viewBox="0 0 512 512">
+          <path
+            d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-128-128c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 192 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l210.7 0-73.4 73.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l128-128zM160 96c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 32C43 32 0 75 0 128L0 384c0 53 43 96 96 96l64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l64 0z"
+          />
+        </svg>
+      </a>
+    </li>
   </ul>
 </nav>
 <div class="content">
@@ -98,6 +116,12 @@
     flex-direction: column;
     row-gap: 10px;
   }
+
+  li button {
+    opacity: 0;
+    width: 0;
+  }
+
   svg {
     fill: white;
     width: 25px;

@@ -1,6 +1,12 @@
 import { Role } from './role'
+type User = {
+  name: String
+}
 
-// TODO: remember to set this back to none initially.
-export const globalState = $state({
+const initialState: { role: Role; user?: User } = {
+  // TODO: remember to set this back to none initially.
   role: Role.Manager,
-})
+  user: undefined,
+}
+
+export const globalState = $state(initialState)

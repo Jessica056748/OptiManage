@@ -30,12 +30,12 @@
     } catch (error) {
       console.error(error)
       return
-      // TODO: notify user
-      // notify('❌ Something went wrong, please try again later', 'error')
+      // TODO: Notify user of the internal server error.
     }
 
     if (status === 401) {
       // Credentials were invalid.
+      // TODO: Notify user.
       return
     }
 
@@ -46,17 +46,16 @@
         user: { role, name },
       }: { token: String; user: { role: String; name: String } } = data
 
-      globalState.role =
-        data.user.role === 'Manager' ? Role.Manager : Role.Employee
+      globalState.user = {
+        name,
+      }
+      globalState.role = role === 'Manager' ? Role.Manager : Role.Employee
 
       goto('/home')
     }
 
-    // Otherwise, something else went wrong. Give a vague "try again" message here.
-  }
-
-  function switchToSignUp() {
-    signingUp = true
+    // Otherwise, something else went wrong.
+    // TODO: Give a vague "try again" message here.
   }
 </script>
 
@@ -90,7 +89,12 @@
 
   <div>
     No account?<br />
-    <button type="button" onclick={switchToSignUp}>Sign up!</button>
+    <button
+      type="button"
+      onclick={() => {
+        signingUp = true
+      }}>Sign up!</button
+    >
   </div>
 </form>
 
