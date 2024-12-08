@@ -1,7 +1,7 @@
 <script>
-  import { globalState } from '../state.svelte'
-  import { Role } from '../role'
-  import '../css/app.css'
+  import { globalState } from '../../state.svelte'
+  import { Role } from '../../role'
+  import '../../css/app.css'
 
   const { role } = globalState
   let { children } = $props()
