@@ -8,9 +8,11 @@ Should be prioritized given the time crunch we're in.
 
 - ✅ Render what is shown in Opti-Svelte here, with SvelteKit
 - Find more suitable light and dark (mainly dark, which only has two images) backgrounds with good contrast that fit the application's theme
-- Get authentication for manager logins to work (currently still logging as unauthorized, despite the information being correct)
-- Debug manager account creation
+- ✅ Get authentication for manager logins to work
+- ✅ Set the JWT cookie after authentication (cookie is not being set)
+- ✅ Debug manager account creation
 - How will new manager users know what department they belong in? Is this a nullable field, so that it's not necessary to fill up when the manager account is created?
+- Update state user information and redirect to homepage
 - Finish home page
   - Add calendar field
   - Populate calendar field with shift information 

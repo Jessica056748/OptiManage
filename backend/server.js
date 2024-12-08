@@ -8,9 +8,12 @@ const jwt = require('jsonwebtoken') // Import jwt for authentication handling
 // Create an instance of express
 const app = express() // Main object of the server (express instance)
 const PORT = process.env.PORT || 5000 // process.env.PORT allows for dynamic assignment in a production environment
-
+const corsOptions = {
+  origin: 'http://localhost:5173',
+  credentials: true, // Enable credentials (cookies, etc.)
+}
 // Middleware
-app.use(cors()) // Allows frontend to make API requests to your backend (http://localhost:5000)
+app.use(cors(corsOptions)) // Allows frontend to make API requests to your backend (http://localhost:5000)
 app.use(express.json()) // Middleware to parse JSON data, "understanding JSON payloads"
 
 // Middleware to verify JWT
@@ -30,6 +33,46 @@ function authenticateToken(req, res, next) {
     return res.status(403).json({ error: 'Invalid or expired token.' })
   }
 }
+
+// Enpoint solely to verify jwt.
+app.get('/verify', async ({ headers: { cookie } }, res) => {
+  if (typeof cookie !== 'string')
+    res.json({
+      statusCode: 401,
+      body: JSON.stringify({ message: 'Unauthorized' }),
+    })
+
+  const cookies = {}
+  cookie.split(';').map(cookieString => {
+    const [key, value] = cookieString.split('=')
+    cookies[key] = value
+  })
+  const { jwt: token } = cookies
+
+  if (typeof token !== 'string')
+    res.json({
+      statusCode: 401,
+      body: JSON.stringify({ message: 'Unauthorized' }),
+    })
+
+  await jwt.verify(token, process.env.JWT_SECRET, (error, data) => {
+    console.log('error:', error)
+    console.log('data:', data)
+    res.json({
+      statusCode: 403,
+      body: JSON.stringify({ message: 'Forbidden' }),
+    })
+  })
+})
+// error || user === undefined || user.username !== ADMIN_USERNAME
+//   ? {
+//       statusCode: 403,
+//       body: JSON.stringify({ message: 'Forbidden' }),
+//     }
+//   : {
+//       statusCode: 200,
+//       body: JSON.stringify({ message: 'Allowed' }),
+//     }
 
 // Routes (Define a basic route)
 app.get('/', (req, res) => {
@@ -172,11 +215,14 @@ app.post('/authenticate', async (req, res) => {
 
     // 6. Return success message and token (with name in case we want it to say "Welcome, <name>!")
     const { name, role } = user
+    res.cookie('jwt', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      // TODO: Uncomment for production with HTTPS
+      // secure: true
+    })
     res.status(200).json({
       message: 'Authentication successful',
-      headers: {
-        'set-cookie': `jwt=${token}; secure; httpOnly; sameSite=Lax`,
-      },
       user: { name, role },
     }) // Object shorthand in case we want to return more values later
   } catch (error) {
