@@ -1,75 +1,55 @@
-<script>
+<script lang="ts">
+  import { onMount } from 'svelte'
   import { globalState } from '../state.svelte'
   import { Role } from '../role'
   import '../css/app.css'
 
-  const { role } = globalState
-  let { children } = $props()
+  /**
+   * Returns a random integer between 0 (inclusive) and the maximum value specified (exclusive).
+   * Copied from: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
+   */
+  function getRandomIntInclusive(max: number): number {
+    const maxFloored = Math.floor(max)
+    return Math.floor(Math.random() * maxFloored)
+  }
+
+  let imageUrl: String = $state('')
+  onMount(() => {
+    const // lightBackgrounds = ['beach', 'desert', 'glaciers', 'precipice', 'sea', 'structures'],
+      // Removed some of the images that don't contrast well with the OptiManage title.
+      // TODO: make these NOT hard-coded.
+      lightBackgrounds = ['beach', 'desert', 'glaciers', 'precipice'],
+      darkBackgrounds = ['desert', 'galaxy'],
+      darkPreferred =
+        window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches,
+      imageDir = darkPreferred ? 'dark' : 'light',
+      imageIndex = getRandomIntInclusive(
+        darkPreferred ? darkBackgrounds.length : lightBackgrounds.length
+      )
+
+    imageUrl = `/src/assets/images/${imageDir}/${(darkPreferred ? darkBackgrounds : lightBackgrounds)[imageIndex]}.jpg`
+  })
+
+  const { role } = globalState,
+    { children } = $props()
 </script>
 
-{@render children()}
+<main
+  class={role !== Role.None ? 'authenticated' : ''}
+  style="background-image: url({imageUrl});"
+>
+  {@render children()}
+</main>
 
 <style>
-  nav {
-    width: 50px;
-    background-color: hsla(0, 0%, 0%, 0.5);
+  main {
+    background-position: center;
+    background-size: cover;
+  }
 
+  main.authenticated {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    row-gap: 10px;
-  }
-  ul {
-    list-style-type: none;
-  }
-  svg {
-    width: 25px;
-    transition: width 0.3s ease;
-  }
-  svg:hover {
-    width: 30px;
-    cursor: pointer;
-  }
-  svg.shake {
-    animation: shake 1s ease 0 forwards;
-  }
-
-  @media (prefers-color-scheme: light) {
-    svg {
-      fill: hsl(0, 0%, 14%);
-      stroke-width: 1px;
-    }
-  }
-  @media (prefers-color-scheme: dark) {
-    svg {
-      fill: white;
-    }
-  }
-
-  @keyframes shake {
-    0% {
-      transform: rotate(0deg);
-      fill: white;
-    }
-    12.5% {
-      transform: rotate(15deg);
-    }
-    37.5% {
-      transform: rotate(-15deg);
-    }
-    50% {
-      fill: hsl(0, 100%, 50%);
-    }
-    67.5% {
-      transform: rotate(15deg);
-    }
-    87.5% {
-      transform: rotate(-15deg);
-    }
-    100% {
-      transform: rotate(0deg);
-      fill: white;
-    }
+    flex-direction: row;
   }
 </style>

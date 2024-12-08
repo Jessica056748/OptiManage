@@ -54,6 +54,7 @@ app.get('/test-db', async (req, res) => {
 // createManager function (POST method)
 app.post('/create-manager', async (req, res) => {
   const { sin, name, phone, address, departmentid, email, password } = req.body // Get parameters from request body
+
   const queryText = `
         SELECT *
         FROM MANAGER
@@ -173,8 +174,10 @@ app.post('/authenticate', async (req, res) => {
     const { name, role } = user
     res.status(200).json({
       message: 'Authentication successful',
+      headers: {
+        'set-cookie': `jwt=${token}; secure; httpOnly; sameSite=Lax`,
+      },
       user: { name, role },
-      token, // Include the JWT token in the response
     }) // Object shorthand in case we want to return more values later
   } catch (error) {
     console.error('Error authenticating manager: ', error.message)
@@ -231,12 +234,10 @@ app.post('/add-employee', async (req, res) => {
       !rate ||
       !departmentid
     ) {
-      return res
-        .status(400)
-        .json({
-          error:
-            'SIN, name, address, email, manager SIN, rate and password are required',
-        })
+      return res.status(400).json({
+        error:
+          'SIN, name, address, email, manager SIN, rate and password are required',
+      })
     }
     // Check if manager exists in Schema
     const managerResult = await pool.query(managerCheckQuery, managerSin)
@@ -382,11 +383,9 @@ app.patch('/authorize-request/:id', authenticateToken, async (req, res) => {
     ])
 
     if (updateResult.rows.length === 0) {
-      return res
-        .status(404)
-        .json({
-          error: 'Request not found or you are not authorized to update it',
-        })
+      return res.status(404).json({
+        error: 'Request not found or you are not authorized to update it',
+      })
     }
 
     const { fromsin, type } = updateResult.rows[0] // Get employee SIN and request type
@@ -402,13 +401,11 @@ app.patch('/authorize-request/:id', authenticateToken, async (req, res) => {
     const notificationValues = [fromsin, requestId, notificationMessage]
     await pool.query(notificationQuery, notificationValues)
 
-    res
-      .status(200)
-      .json({
-        message: `Request ${
-          authorized ? 'approved' : 'rejected'
-        } successfully and employee notified.`,
-      })
+    res.status(200).json({
+      message: `Request ${
+        authorized ? 'approved' : 'rejected'
+      } successfully and employee notified.`,
+    })
   } catch (error) {
     console.error('Error authorizing request: ', error.message)
     res.status(500).json({ error: 'Failed to authorize request' })
@@ -614,11 +611,9 @@ app.post('/schedule', authenticateToken, async (req, res) => {
       )
 
       if (availabilityValidationResult.rows.length === 0) {
-        return res
-          .status(400)
-          .json({
-            error: 'Employee has no available time slots for the given week',
-          })
+        return res.status(400).json({
+          error: 'Employee has no available time slots for the given week',
+        })
       }
     }
     // Insert or update the schedule
@@ -657,11 +652,9 @@ app.post('/shift', authenticateToken, async (req, res) => {
   try {
     // Validate inputs
     if (!day || !week || !month || !esin || !length) {
-      return res
-        .status(400)
-        .json({
-          error: 'All fields (day, week, month, esin, length) are required',
-        })
+      return res.status(400).json({
+        error: 'All fields (day, week, month, esin, length) are required',
+      })
     }
     // Check that day and week are valid integers
     const dayInt = parseInt(day, 10)
@@ -669,25 +662,19 @@ app.post('/shift', authenticateToken, async (req, res) => {
     const monthInt = parseInt(month, 10)
 
     if (isNaN(dayInt) || dayInt < 1 || dayInt > 7) {
-      return res
-        .status(400)
-        .json({
-          error: 'Invalid day value. It must be an integer between 1 and 7',
-        })
+      return res.status(400).json({
+        error: 'Invalid day value. It must be an integer between 1 and 7',
+      })
     }
     if (isNaN(weekInt) || weekInt < 1 || weekInt > 52) {
-      return res
-        .status(400)
-        .json({
-          error: 'Invalid week value. It must be an integer between 1 and 52',
-        })
+      return res.status(400).json({
+        error: 'Invalid week value. It must be an integer between 1 and 52',
+      })
     }
     if (isNaN(monthInt) || monthInt < 1 || monthInt > 12) {
-      return res
-        .status(400)
-        .json({
-          error: 'Invalid month value. It must be an integer between 1 and 12',
-        })
+      return res.status(400).json({
+        error: 'Invalid month value. It must be an integer between 1 and 12',
+      })
     }
     if (length <= 0) {
       return res
@@ -935,5 +922,6 @@ app.delete('/shift', authenticateToken, async (req, res) => {
 // Start the server
 app.listen(PORT, () => {
   // PORT to listen for requests
+  console.clear()
   console.log(`Server is running on http://localhost:${PORT}`)
 })

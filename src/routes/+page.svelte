@@ -1,59 +1,40 @@
 <script lang="ts">
-  import Auth from '$lib/Auth.svelte'
-  import Home from '$lib/Home.svelte'
-  import { onMount } from 'svelte'
+  // @ts-ignore
+  import Login from '../lib/auth/Login.svelte'
+  // @ts-ignore
+  import SignUp from '../lib/auth/SignUp.svelte'
   import { Role } from '../role'
   import { globalState } from '../state.svelte'
 
-  /**
-   * Returns a random integer between 0 (inclusive) and the maximum value specified (exclusive).
-   * Copied from: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
-   */
-  function getRandomIntInclusive(max: number) {
-    const maxFloored = Math.floor(max)
-    return Math.floor(Math.random() * maxFloored)
-  }
-
-  let imageUrl: String
-  onMount(() => {
-    const // lightBackgrounds = ['beach', 'desert', 'glaciers', 'precipice', 'sea', 'structures'],
-      // Removed some of the images that don't contrast well with the OptiManage title.
-      // TODO: make these NOT hard-coded.
-      lightBackgrounds = ['beach', 'desert', 'glaciers', 'precipice'],
-      darkBackgrounds = ['desert', 'galaxy'],
-      darkPreferred =
-        window.matchMedia &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches,
-      imageDir = darkPreferred ? 'dark' : 'light',
-      imageIndex = getRandomIntInclusive(
-        darkPreferred ? darkBackgrounds.length : lightBackgrounds.length
-      )
-
-    imageUrl = `/src/assets/images/${imageDir}/${(darkPreferred ? darkBackgrounds : lightBackgrounds)[imageIndex]}.jpg`
-  })
-
-  const { role } = globalState
+  let signingUp: boolean = $state(false)
 </script>
 
-<svelte:head>
-  <!-- <title>Home</title>
-  <meta name="description" content="Svelte demo app" /> -->
-</svelte:head>
-
-<main
-  class={role !== Role.None ? 'authenticated' : ''}
-  style="background-image: url({imageUrl});"
->
-  {#if role === Role.None}
-    <Auth />
+<h1>ʘptiManage</h1>
+<div class="auth-wrapper">
+  {#if signingUp}
+    <SignUp bind:signingUp />
   {:else}
-    <Home />
+    <Login bind:signingUp />
   {/if}
-</main>
+</div>
 
 <style>
-  main {
-    background-size: cover;
-    background-position: center;
+  h1 {
+    margin: 1em;
+    font-size: 2em;
+  }
+
+  .auth-wrapper {
+    width: 100%;
+    display: flex;
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+  }
+
+  @media only screen and (min-width: 600px) {
+    h1 {
+      font-size: 3.2em;
+    }
   }
 </style>

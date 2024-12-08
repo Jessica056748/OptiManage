@@ -81,15 +81,34 @@
   </label>
 
   <label>
-    SIN
-    <input type="password" name="sin" placeholder="111111111" required />
+    Address
+    <input
+      type="address"
+      name="address"
+      placeholder="2717 Hocus Pocus Drive, Calgary, Alberta, T2A45K"
+      required
+    />
   </label>
 
+  <label>
+    SIN
+    <input
+      type="password"
+      name="sin"
+      minlength="9"
+      maxlength="9"
+      placeholder="111111111"
+      required
+    />
+  </label>
+
+  <!-- TOOO: Fix the issue where, if a department number that doesn't exist is entered, we cannot create an account. -->
   <label>
     Department Id
     <input type="number" name="departmentid" placeholder="3" required />
   </label>
 
+  <!-- TODO: add a second password field to prevent typos. -->
   <label>
     Password
 

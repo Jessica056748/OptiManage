@@ -59,7 +59,7 @@
       type="text"
       name="email"
       id="email"
-      placeholder="PParker@optimanage.ca"
+      placeholder="trump@us.ca"
       required
     />
   </label>
@@ -71,7 +71,7 @@
       type="password"
       name="password"
       id="password"
-      placeholder="PeterParker"
+      placeholder="trump"
       required
     />
   </label>

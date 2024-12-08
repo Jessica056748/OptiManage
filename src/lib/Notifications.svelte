@@ -1,33 +1,32 @@
-<script>
-  import { SvelteSet } from 'svelte/reactivity';
-	import { setContext } from 'svelte';
+<script lang="ts">
+  import { SvelteSet } from 'svelte/reactivity'
+  import { setContext } from 'svelte'
 
-	let canvas;
-	let notifications = new SvelteSet();
+  let canvas
+  let notifications = new SvelteSet()
 
-	setContext('canvas', { addItem })
-	
-	function addItem(fn) {
-		$effect(() => {
-			notifications.add(fn);
-			return () => notifications.delete(fn);
-		});
-	}
+  setContext('canvas', { addItem })
 
-	$effect(() => {
-		const ctx = canvas.getContext('2d');
+  function addItem(fn: String) {
+    $effect(() => {
+      notifications.add(fn)
+      return () => notifications.delete(fn)
+    })
+  }
 
-		ctx.clearRect(0, 0, width, height);
-		notifications.forEach(fn => fn(ctx));
-	});
+  $effect(() => {
+    // const ctx = canvas.getContext('2d');
+    // ctx.clearRect(0, 0, width, height);
+    // notifications.forEach(fn => fn(ctx));
+  })
 </script>
 
-{#each }
+<!-- {#each }
   <div className='notification' key={i}>
           {notification}
         </div>
-{/each}
-{@render children()}
+{/each} -->
+<!-- {@render children()} -->
 
 <style>
 </style>
