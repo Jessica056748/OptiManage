@@ -42,10 +42,10 @@
       firstCalendarDate === 1 ? 0 : daysLastMonth + 1 - firstCalendarDate,
     daysAfter = 35 - daysBefore - daysThisMonth
 
-  const {
+  // const {
     // @ts-ignore
-    user: { name },
-  } = globalState
+  //   user: { name },
+  // } = globalState
 
   // Welcome message.
   const messages = {
@@ -71,7 +71,8 @@
 <div class="options">
   <!-- <h2>Welcome back</h2> -->
   <div>
-    <h2>{greeting}, {name}</h2>
+    <!-- <h2>{greeting}, {name}</h2> -->
+    <h2>{greeting}</h2>
     {months[month]}
     {today.getDate()}, {year}
   </div>

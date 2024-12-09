@@ -9,19 +9,19 @@ export async function load(request) {
     { role } = globalState
 
   // TODO: validate session secret.
-  const token = cookies.get('jwt'),
-    response = await fetch(`http://localhost:${PORT}/verify`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ token }),
-    }),
-    data = await response.json()
-  console.log('data:', data)
+  // const token = cookies.get('jwt'),
+  //   response = await fetch(`http://localhost:${PORT}/verify`, {
+  //     method: 'POST',
+  //     credentials: 'include',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+
+  //     },
+  //     body: JSON.stringify({ token }),
+  //   }),
+  //   data = await response.json()
   // if (locals.secret === 'VALID') redirect(302, '/home')
   return {
-    secret: locals.secret,
+    role
   }
 }

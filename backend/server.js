@@ -21,66 +21,19 @@ function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'] // Get authorization header
   const token = authHeader && authHeader.split(' ')[1] // Extract token
 
-  if (!token) {
+  if (!token)
     return res.status(401).json({ error: 'Access denied. Token missing.' })
-  }
+
   try {
     // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     req.user = decoded // Attach decoded payload to the request object
     next() // Continue, skipping rest of the code
   } catch (error) {
+    console.log('Error authenticating token:', error)
     return res.status(403).json({ error: 'Invalid or expired token.' })
   }
 }
-
-// Enpoint solely to verify jwt.
-app.post('/verify', (req, res) => {
-  const authHeader = req.headers['authorization'] // Get authorization header
-  const token = authHeader && authHeader.split(' ')[1] // Extract token
-
-  if (!token) {
-    return res.status(401).json({ error: 'Access denied. Token missing.' })
-  }
-  try {
-    // Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    req.user = decoded // Attach decoded payload to the request object
-    res.status(200).json({
-      decoded,
-    })
-  } catch (error) {
-    return res.status(403).json({ error: 'Invalid or expired token.' })
-  }
-})
-// app.post('/verify', (req, res) => {
-//   const { token } = req.body
-
-//   if (typeof token !== 'string')
-//     res.json({
-//       statusCode: 401,
-//       body: JSON.stringify({ message: 'Unauthorized' }),
-//     })
-
-//   jwt.verify(token, process.env.JWT_SECRET, (error, data) => {
-//     console.log('error:', error)
-//     console.log('data:', data)
-//     if (error)
-//       res.json({
-//         statusCode: 401,
-//         body: JSON.stringify({ message: 'Unauthorized' }),
-//       })
-//   })
-// })
-// error || user === undefined || user.username !== ADMIN_USERNAME
-//   ? {
-//       statusCode: 403,
-//       body: JSON.stringify({ message: 'Forbidden' }),
-//     }
-//   : {
-//       statusCode: 200,
-//       body: JSON.stringify({ message: 'Allowed' }),
-//     }
 
 // Routes (Define a basic route)
 app.get('/', (req, res) => {
@@ -827,13 +780,12 @@ app.get('/shifts/department', authenticateToken, async (req, res) => {
             FROM shift AS s
             INNER JOIN employee ON shift.esin = employee.sin
             INNER JOIN department ON employee.departmentid = department.departmentid
-            WHERE department.msin = $1
-        `
+            WHERE department.msin = $1`
     const params = [msin]
 
     // Add filters for week and/or month if provided
     if (week) {
-      query += ` AND s.week = $${params.length + 1}`
+      query += `AND s.week = $${params.length + 1}`
       params.push(week)
     }
     if (month) {
