@@ -1,9 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { Role } from '../../role'
-  import { globalState } from '../../state.svelte'
-  let { signingUp = $bindable() }: { signingUp: boolean } = $props()
+  import { type User } from '../../types'
   const { VITE_BACKEND_PORT: PORT } = import.meta.env
+  let { signingUp = $bindable() }: { signingUp: boolean } = $props()
 
   /**
    * Sends a login request to the server, and updates App state if successful. Does not mutate the database.
@@ -13,7 +12,7 @@
 
     // @ts-ignore
     const body = Object.fromEntries(new FormData(event.target))
-    let status, data
+    let status, data: { user: User }
 
     try {
       const response = await fetch(`http://localhost:${PORT}/authenticate`, {
@@ -41,16 +40,7 @@
 
     if (status === 200) {
       // Credentials were valid.
-      const {
-        // Unsure if I'll need these, since user info is already stored in the jwt.
-        user: { role, name },
-      }: { token: String; user: { role: String; name: String } } = data
-
-      globalState.user = {
-        name,
-      }
-      globalState.role = role === 'manager' ? Role.Manager : Role.Employee
-
+      // Unsure if I'll need these, since user info is already stored in the jwt.
       goto('/home')
     }
 

@@ -1,9 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { globalState } from '../state.svelte'
-  import { Role } from '../role'
   import '../css/app.css'
-  import { goto } from '$app/navigation'
 
   /**
    * Returns a random integer between 0 (inclusive) and the maximum value specified (exclusive).

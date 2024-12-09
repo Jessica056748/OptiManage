@@ -1,8 +1,15 @@
 <script lang="ts">
-  import { globalState } from '../../state.svelte'
-  const { user } = globalState
+  import Day from '$lib/home/Day.svelte'
+  import { getUserContext, setUserContext } from '../../context.js'
 
-  // Credit to Jon Musselwhite: https://stackoverflow.com/questions/58213585/svelte-3-how-to-loop-each-block-x-amount-of-times.
+  let user = getUserContext(),
+    { data } = $props(),
+    { shifts } = data
+
+  user.shifts = shifts
+  setUserContext(user)
+
+  // Credit to Jon Musselwhite for this range function: https://stackoverflow.com/questions/58213585/svelte-3-how-to-loop-each-block-x-amount-of-times.
   function* range(start: number, end: number): Generator<number> {
     for (let i = start; i <= end; i++) yield i
   }
@@ -45,8 +52,12 @@
 
   const messages = {
       morning: ['Good morning', 'Rise and shine', 'Eat the frog'],
-      afternoon: ['Good afternoon', 'Keep working', 'Keep pushing'],
-      evening: ['Good evening', 'Sit back and unwind', 'Tomorrow starts now'],
+      afternoon: ['Good afternoon', 'Keep working', 'Eat well'],
+      evening: [
+        'Good evening',
+        'Sit back and unwind',
+        'The morning starts tonight',
+      ],
       night: ['Rest and recharge', 'Sleep is your superpower', 'Good night'],
     },
     randomIndex = Math.floor(Math.random() * 2 + 1),
@@ -65,20 +76,25 @@
 
 <div class="options">
   <div>
-    <h2>{greeting}{user.name ? `, ${user.name}` : ''}</h2>
+    <h2>{greeting}, {user.name}</h2>
     {months[month]}
     {today.getDate()}, {year}
   </div>
 </div>
 <div class="calendar">
   {#each range(1, daysBefore) as i}
-    <div class="grayed">{firstCalendarDate + i}</div>
+    <!-- TOOO: Fix. Shouldn't have to subtract 1. -->
+    <Day _classes={['grayed']} day={firstCalendarDate + i - 1} />
+    <!-- <Date classes={['grayed']} date={firstCalendarDate + i} /> -->
+    <!-- <div class="grayed">{firstCalendarDate + i}</div> -->
   {/each}
   {#each range(1, daysThisMonth) as i}
-    <div class={i === today.getDate() ? 'today' : ''}>{i}</div>
+    <Day _classes={[i === today.getDate() ? 'today' : '']} day={i} />
+    <!-- <div class={i === today.getDate() ? 'today' : ''}>{i}</div> -->
   {/each}
   {#each range(1, daysAfter) as i}
-    <div class="grayed">{i}</div>
+    <Day _classes={['grayed']} day={i} />
+    <!-- <div class="grayed">{i}</div> -->
   {/each}
 </div>
 
@@ -89,8 +105,9 @@
   }
 
   .options {
-    height: 200px;
-    /* border-bottom: 2px solid white; */
+    /* Maybe we don't need that big of an options page, since most of the editing is done on the calendar itself. */
+    /* height: 100px; */
+    border-bottom: 2px solid white;
   }
   .calendar {
     flex-grow: 1;
@@ -118,28 +135,9 @@
     background: #555;
   }
 
-  .calendar > * {
-    padding: 3px;
-    border: 0 solid white;
-    /* border-width: 0 1px 0; */
-    border-width: 1px 0;
-    /* border-width: 0 1px 1px; */
-    aspect-ratio: 1 / 1;
-  }
-  .today {
-    font-weight: bold;
-    color: hsl(237, 100%, 70%);
-    border-color: hsl(237, 100%, 70%);
-    background-color: hsla(0, 0%, 0%, 0.2);
-  }
-  .grayed {
-    color: hsl(0, 0%, 70%);
-    background-color: hsla(0, 0%, 0%, 0.3);
-  }
-
   @media only screen and (max-width: 810px) {
     .options {
-      height: 100px;
+      /* height: 80px; */
     }
   }
   @media (prefers-color-scheme: light) {

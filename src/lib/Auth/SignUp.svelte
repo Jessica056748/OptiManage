@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { Role } from '../../role'
-  import { globalState } from '../../state.svelte'
-  let { signingUp = $bindable() }: { signingUp: boolean } = $props()
+  import { Role, type User } from '../../types'
+  import { getUserContext } from '../../context'
   const { VITE_BACKEND_PORT: PORT } = import.meta.env
+  let { signingUp = $bindable() }: { signingUp: boolean } = $props(),
+    user = getUserContext()
 
   /**
    * Sends a signup request to the server, updating the database as well as the App state if successful.
@@ -38,7 +39,7 @@
 
     if (status === 200) {
       // Operation was successful.
-      globalState.role = Role.Manager
+      user.role = Role.Manager
     }
 
     // Otherwise, something else went wrong. Give a vague "try again" message here.

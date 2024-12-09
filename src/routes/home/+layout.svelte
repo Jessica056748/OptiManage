@@ -1,20 +1,25 @@
 <script lang="ts">
   import { page } from '$app/stores'
-  import { globalState } from '../../state.svelte'
-  import { Role } from '../../role'
-  import '../../css/app.css'
   import { goto } from '$app/navigation'
+  import '../../css/app.css'
+  import { Role } from '../../types'
+  import { getUserContext, setUserContext } from '../../context'
 
   const { VITE_BACKEND_PORT: PORT } = import.meta.env,
-    { children } = $props()
+    { children, data } = $props(),
+    { user } = data
   let path = $state($page.url.pathname)
 
+  setUserContext(user)
   $effect(() => {
     path = $page.url.pathname
   })
 
+  /**
+   * Deletes the current jwt token, and erases state/context.
+   * @param event
+   */
   async function signout(event: Event) {
-    globalState.role = Role.None
     try {
       // Request to delete the jwt cookie.
       await fetch(`http://localhost:${PORT}/logout`, {
@@ -28,6 +33,7 @@
       // TODO: notify user.
       console.error(error)
     }
+
     goto('/')
   }
 
@@ -67,7 +73,7 @@
         </svg>
       </a>
     </li>
-    {#if globalState.role === Role.Manager}
+    {#if user.role === Role.Manager}
       <li title="Manage employees" class="employees">
         <a aria-label="employees" href="/home/employees">
           <svg

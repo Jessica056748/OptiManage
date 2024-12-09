@@ -1,22 +1,6 @@
 <script lang="ts">
-  import { goto } from '$app/navigation'
-  import { onMount } from 'svelte'
-
-  // @ts-ignore
   import Login from '../lib/auth/Login.svelte'
-  // @ts-ignore
   import SignUp from '../lib/auth/SignUp.svelte'
-  import { Role } from '../role'
-  import { globalState } from '../state.svelte'
-
-  const { role } = globalState
-
-  // Redirects user to the
-  $effect.pre(() => {
-    const authenticated = role !== Role.None
-
-    if (authenticated) goto('/home')
-  })
 
   let signingUp: boolean = $state(false)
 </script>

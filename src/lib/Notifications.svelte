@@ -13,12 +13,6 @@
       return () => notifications.delete(fn)
     })
   }
-
-  $effect(() => {
-    // const ctx = canvas.getContext('2d');
-    // ctx.clearRect(0, 0, width, height);
-    // notifications.forEach(fn => fn(ctx));
-  })
 </script>
 
 <!-- {#each }
