@@ -1,4 +1,3 @@
-import { redirect } from '@sveltejs/kit'
 import { VITE_BACKEND_PORT as PORT } from '$env/static/private'
 import { globalState } from '../../state.svelte.js'
 
@@ -12,7 +11,6 @@ export async function load({ locals, cookies }) {
 
   try {
     const response = await fetch(
-      // TODO: verify this works after Daniel's fix.
       `http://localhost:${PORT}/shifts/department?month=${month}`,
       {
         credentials: 'include',

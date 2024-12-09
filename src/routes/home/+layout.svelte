@@ -5,18 +5,32 @@
   import '../../css/app.css'
   import { goto } from '$app/navigation'
 
-  const { role } = globalState
-
-  let path = $state($page.url.pathname),
+  const { VITE_BACKEND_PORT: PORT } = import.meta.env,
     { children } = $props()
+  let path = $state($page.url.pathname)
+
+  $effect.pre(() => {
+    if (globalState.role === Role.None) goto('/')
+  })
 
   $effect(() => {
     path = $page.url.pathname
   })
 
-  function signout(event: Event) {
+  async function signout(event: Event) {
     // TODO: clear JWT.
     globalState.role = Role.None
+    try {
+      const response = await fetch(`http://localhost:${PORT}/logout`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+    } catch (error) {
+      console.error(error)
+      // TODO: notify user.
+    }
     goto('/')
   }
 
@@ -56,7 +70,7 @@
         </svg>
       </a>
     </li>
-    {#if role === Role.Manager}
+    {#if globalState.role === Role.Manager}
       <li title="Manage employees" class="employees">
         <a aria-label="employees" href="/home/employees">
           <svg

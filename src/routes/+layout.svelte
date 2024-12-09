@@ -3,6 +3,7 @@
   import { globalState } from '../state.svelte'
   import { Role } from '../role'
   import '../css/app.css'
+  import { goto } from '$app/navigation'
 
   /**
    * Returns a random integer between 0 (inclusive) and the maximum value specified (exclusive).
@@ -29,6 +30,9 @@
       )
 
     imageUrl = `/src/assets/images/${imageDir}/${(darkPreferred ? darkBackgrounds : lightBackgrounds)[imageIndex]}.jpg`
+
+    $inspect('globalState:', globalState)
+    $inspect('Role.None:', Role.None)
   })
 
   const { role } = globalState,

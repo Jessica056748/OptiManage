@@ -13,7 +13,9 @@
 
   // Redirects user to the
   $effect.pre(() => {
-    if (role !== Role.None) goto('/home')
+    const authenticated = role !== Role.None
+
+    if (authenticated) goto('/home')
   })
 
   let signingUp: boolean = $state(false)

@@ -12,6 +12,12 @@ const corsOptions = {
   origin: 'http://localhost:5173',
   credentials: true, // Enable credentials (cookies, etc.)
 }
+const cookieOptions = {
+  httpOnly: true,
+  sameSite: 'lax',
+  // TODO: Uncomment for production with HTTPS
+  // secure: true
+}
 // Middleware
 app.use(cors(corsOptions)) // Allows frontend to make API requests to your backend (http://localhost:5000)
 app.use(express.json()) // Middleware to parse JSON data, "understanding JSON payloads"
@@ -52,6 +58,20 @@ app.get('/test-db', async (req, res) => {
     console.error('Database connection error: ', error.message)
     res.status(500).json({ error: 'Database connection failed.' })
   }
+})
+
+/**
+ * Clears the jwt token.
+ */
+app.get('/logout', async (req, res) => {
+  res.cookie('jwt', token, cookieOptions)
+  res.status(200).json({
+    status: 200,
+    headers: {
+      'set-cookie':
+        'jwt=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly',
+    },
+  })
 })
 
 // createManager function (POST method)
@@ -184,12 +204,7 @@ app.post('/authenticate', async (req, res) => {
 
     // 6. Return success message and token (with name in case we want it to say "Welcome, <name>!")
     const { name, role } = user
-    res.cookie('jwt', token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      // TODO: Uncomment for production with HTTPS
-      // secure: true
-    })
+    res.cookie('jwt', token, cookieOptions)
     res.status(200).json({
       message: 'Authentication successful',
       user: { name, role },
