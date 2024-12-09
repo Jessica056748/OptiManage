@@ -6,7 +6,9 @@ import { globalState } from '../../state.svelte.js'
 export async function load({ locals, cookies }) {
   const token = cookies.get('jwt'),
     month = new Date().getMonth()
-  let status: number, data: { shifts: Array<any> }
+  let data: { shifts: Array<any> }
+
+  if (globalState.user.shifts !== undefined) return {}
 
   try {
     const response = await fetch(
