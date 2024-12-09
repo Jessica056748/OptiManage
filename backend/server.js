@@ -39,8 +39,6 @@ app.post('/verify', (req, res) => {
   const authHeader = req.headers['authorization'] // Get authorization header
   const token = authHeader && authHeader.split(' ')[1] // Extract token
 
-  console.log('req:', req)
-
   if (!token) {
     return res.status(401).json({ error: 'Access denied. Token missing.' })
   }
@@ -48,7 +46,6 @@ app.post('/verify', (req, res) => {
     // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     req.user = decoded // Attach decoded payload to the request object
-    console.log('decoded:', decoded)
     res.status(200).json({
       decoded,
     })

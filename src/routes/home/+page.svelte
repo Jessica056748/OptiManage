@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { globalState } from '../../state.svelte'
+
   // Credit to Jon Musselwhite: https://stackoverflow.com/questions/58213585/svelte-3-how-to-loop-each-block-x-amount-of-times.
   function* range(start: number, end: number): Generator<number> {
     for (let i = start; i <= end; i++) yield i
@@ -16,20 +18,20 @@
   const firstWeekdayThisMonth = new Date(year, month, 1).getDay(),
     daysThisMonth = daysInMonth(month, year),
     daysLastMonth = daysInMonth(month - 1, year),
-    weekdays = ['Sun', 'Mon', 'Tues', 'Wednes', 'Thurs', 'Fri', 'Satur'],
+    weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
+      'January',
+      'February',
+      'March',
+      'April',
       'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ]
 
   const firstCalendarDate =
@@ -39,9 +41,41 @@
     daysBefore =
       firstCalendarDate === 1 ? 0 : daysLastMonth + 1 - firstCalendarDate,
     daysAfter = 35 - daysBefore - daysThisMonth
+
+  const {
+    // @ts-ignore
+    user: { name },
+  } = globalState
+
+  // Welcome message.
+  const messages = {
+    morning: ['Good morning', 'Rise and shine', 'Eat the frog'],
+    afternoon: ['Good afternoon', 'Keep working', 'Keep pushing'],
+    evening: ['Good evening', 'Sit back and unwind', 'Tomorrow starts now'],
+    night: ['Rest and recharge', 'Sleep is your superpower', ''],
+  }
+  const randomIndex = Math.floor(Math.random() * 2 + 1),
+    hour = today.getHours(),
+    greeting =
+      messages[
+        hour >= 5 && hour < 12
+          ? 'morning'
+          : hour >= 12 && hour < 16
+            ? 'afternoon'
+            : hour >= 16 && hour < 21
+              ? 'evening'
+              : 'night'
+      ][randomIndex]
 </script>
 
-<div class="options">OPTIONS</div>
+<div class="options">
+  <!-- <h2>Welcome back</h2> -->
+  <div>
+    <h2>{greeting}, {name}</h2>
+    {months[month]}
+    {today.getDate()}, {year}
+  </div>
+</div>
 <div class="calendar">
   <!-- 0 <= count <= 5 -->
   {#each range(1, daysBefore) as i}
@@ -65,8 +99,8 @@
   }
 
   .options {
-    height: 100px;
-    border-bottom: 2px solid white;
+    height: 200px;
+    /* border-bottom: 2px solid white; */
   }
   .calendar {
     flex-grow: 1;
@@ -97,7 +131,9 @@
   .calendar > * {
     padding: 3px;
     border: 0 solid white;
-    border-width: 0 1px 1px;
+    /* border-width: 0 1px 0; */
+    border-width: 1px 0;
+    /* border-width: 0 1px 1px; */
     aspect-ratio: 1 / 1;
   }
   .today {
@@ -111,6 +147,11 @@
     background-color: hsla(0, 0%, 0%, 0.3);
   }
 
+  @media only screen and (max-width: 810px) {
+    .options {
+      height: 100px;
+    }
+  }
   @media (prefers-color-scheme: light) {
     .options,
     .calendar {

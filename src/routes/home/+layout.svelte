@@ -100,7 +100,7 @@
     margin: 50px;
     padding: 20px;
     height: calc(100vh - 100px);
-    border-radius: 20px;
+    border-radius: 10px;
     flex-grow: 1;
 
     background-color: hsla(0, 0%, 0%, 0.5);
@@ -115,11 +115,6 @@
     display: flex;
     flex-direction: column;
     row-gap: 10px;
-  }
-
-  li button {
-    opacity: 0;
-    width: 0;
   }
 
   svg {
@@ -146,6 +141,13 @@
       fill: black;
     }
   } */
+
+  @media only screen and (max-width: 810px) {
+    .content {
+      margin: 10px;
+      padding: 10px;
+    }
+  }
 
   @keyframes shake {
     0% {
