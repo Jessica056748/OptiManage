@@ -1116,6 +1116,49 @@ app.post('/payroll/authorize', authenticateToken, async (req, res) => {
     }
 })
 
+// Endpoint for updating phone or address
+app.patch('/update-contact-info', authenticateToken, async (req, res) => {
+    const {sin, role} = req.user; // Get sin and role from JWT
+    const {phone, address} = req.body; // Get new phone/address from request body
+
+    try {
+        if (!phone && !address) {
+            return res.status(400).json({error: 'At least one phone or address must be provided.'});
+        }
+        const table = role === 'manager' ? 'manager' : 'employee';
+
+        // Build query dynamically based on provided fields
+        let updateQuery = `UPDATE ${table} SET `;
+        const params = [];
+        let paramIndex = 1;
+
+        if (phone) {
+            updateQuery += `phone = $${paramIndex++}`;
+            params.push(phone);
+        }
+
+        if (address) {
+            if (phone) updateQuery += ', '; // Add a comma if phone is already set
+            updateQuery += `address = $${paramIndex++}`;
+            params.push(address);
+        }
+
+        updateQuery += ` WHERE sin = $${paramIndex++}`;
+        params.push(sin);
+
+        // Query the DB
+        const result = await pool.query(updateQuery, params);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({error: 'User not found or changes not made'});
+        }
+
+        res.status(200).json({message: 'Contact information updated successfully.'});
+    } catch (error) {
+        console.error('Error updating contact information: ', error.message);
+        res.status(500).json({error: 'Failed to update contact information.'});
+    }
+});
 
 
 
