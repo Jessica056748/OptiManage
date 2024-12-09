@@ -60,18 +60,27 @@ app.get('/test-db', async (req, res) => {
   }
 })
 
+app.post('/verify', async (req, res) => {
+  const authHeader = req.headers['authorization'], // Get authorization header
+    token = authHeader && authHeader.split(' ')[1] // Extract token
+
+  if (!token)
+    return res.status(401).json({ error: 'Access denied. Token missing.' })
+
+  try {
+    jwt.verify(token, process.env.JWT_SECRET)
+    return res.status(200).json({ authenticated: true })
+  } catch (error) {
+    return res.status(403).json({ error: 'Invalid or expired token.' })
+  }
+})
+
 /**
  * Clears the jwt token.
  */
-app.get('/logout', async (req, res) => {
-  res.cookie('jwt', token, cookieOptions)
-  res.status(200).json({
-    status: 200,
-    headers: {
-      'set-cookie':
-        'jwt=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly',
-    },
-  })
+app.post('/logout', async (req, res) => {
+  res.cookie('jwt', '', { ...cookieOptions, expires: new Date(0) })
+  res.status(200).send()
 })
 
 // createManager function (POST method)

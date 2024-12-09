@@ -49,7 +49,7 @@
       globalState.user = {
         name,
       }
-      globalState.role = role === 'Manager' ? Role.Manager : Role.Employee
+      globalState.role = role === 'manager' ? Role.Manager : Role.Employee
 
       goto('/home')
     }

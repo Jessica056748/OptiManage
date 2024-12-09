@@ -1,5 +1,6 @@
 <script lang="ts">
   import { globalState } from '../../state.svelte'
+  const { user } = globalState
 
   // Credit to Jon Musselwhite: https://stackoverflow.com/questions/58213585/svelte-3-how-to-loop-each-block-x-amount-of-times.
   function* range(start: number, end: number): Generator<number> {
@@ -42,19 +43,13 @@
       firstCalendarDate === 1 ? 0 : daysLastMonth + 1 - firstCalendarDate,
     daysAfter = 35 - daysBefore - daysThisMonth
 
-  // const {
-    // @ts-ignore
-  //   user: { name },
-  // } = globalState
-
-  // Welcome message.
   const messages = {
-    morning: ['Good morning', 'Rise and shine', 'Eat the frog'],
-    afternoon: ['Good afternoon', 'Keep working', 'Keep pushing'],
-    evening: ['Good evening', 'Sit back and unwind', 'Tomorrow starts now'],
-    night: ['Rest and recharge', 'Sleep is your superpower', ''],
-  }
-  const randomIndex = Math.floor(Math.random() * 2 + 1),
+      morning: ['Good morning', 'Rise and shine', 'Eat the frog'],
+      afternoon: ['Good afternoon', 'Keep working', 'Keep pushing'],
+      evening: ['Good evening', 'Sit back and unwind', 'Tomorrow starts now'],
+      night: ['Rest and recharge', 'Sleep is your superpower', 'Good night'],
+    },
+    randomIndex = Math.floor(Math.random() * 2 + 1),
     hour = today.getHours(),
     greeting =
       messages[
@@ -69,22 +64,16 @@
 </script>
 
 <div class="options">
-  <!-- <h2>Welcome back</h2> -->
   <div>
-    <!-- <h2>{greeting}, {name}</h2> -->
-    <h2>{greeting}</h2>
+    <h2>{greeting}{user.name ? `, ${user.name}` : ''}</h2>
     {months[month]}
     {today.getDate()}, {year}
   </div>
 </div>
 <div class="calendar">
-  <!-- 0 <= count <= 5 -->
   {#each range(1, daysBefore) as i}
-    <!-- {#each range(firstCalendarDate, daysLastMonth) as i} -->
     <div class="grayed">{firstCalendarDate + i}</div>
   {/each}
-
-  <!-- Count will always be daysThisMonth. -->
   {#each range(1, daysThisMonth) as i}
     <div class={i === today.getDate() ? 'today' : ''}>{i}</div>
   {/each}

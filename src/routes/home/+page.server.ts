@@ -1,11 +1,18 @@
 import { VITE_BACKEND_PORT as PORT } from '$env/static/private'
 import { globalState } from '../../state.svelte.js'
 
-// Redirects the user to the homepage if they are already authenticated.
-export async function load({ locals, cookies }) {
+
+/**
+ * Loads shifts of the current user.
+ * @param param0 
+ * @returns 
+ */
+export async function load({ cookies }) {
   const token = cookies.get('jwt'),
     month = new Date().getMonth()
-  let data: { shifts: Array<any> }
+  // TODO: specify shift type.
+  type Shift = {}
+  let data: { shifts: Array<Shift> }
 
   if (globalState.user.shifts !== undefined) return {}
 

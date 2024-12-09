@@ -9,27 +9,24 @@
     { children } = $props()
   let path = $state($page.url.pathname)
 
-  $effect.pre(() => {
-    if (globalState.role === Role.None) goto('/')
-  })
-
   $effect(() => {
     path = $page.url.pathname
   })
 
   async function signout(event: Event) {
-    // TODO: clear JWT.
     globalState.role = Role.None
     try {
-      const response = await fetch(`http://localhost:${PORT}/logout`, {
+      // Request to delete the jwt cookie.
+      await fetch(`http://localhost:${PORT}/logout`, {
+        method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
       })
     } catch (error) {
-      console.error(error)
       // TODO: notify user.
+      console.error(error)
     }
     goto('/')
   }

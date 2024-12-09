@@ -5,8 +5,7 @@ type User = {
 }
 
 const initialState: { role: Role; user: User } = {
-  // TODO: remember to set this back to none initially.
-  role: Role.Manager,
+  role: Role.None,
   user: {},
 }
 

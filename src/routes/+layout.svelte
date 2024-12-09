@@ -30,13 +30,9 @@
       )
 
     imageUrl = `/src/assets/images/${imageDir}/${(darkPreferred ? darkBackgrounds : lightBackgrounds)[imageIndex]}.jpg`
-
-    $inspect('globalState:', globalState)
-    $inspect('Role.None:', Role.None)
   })
 
-  const { role } = globalState,
-    { children } = $props()
+  const { children } = $props()
 </script>
 
 <main style="background-image: url({imageUrl});">
