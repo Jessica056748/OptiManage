@@ -30,7 +30,9 @@ Alter Table "Optimize".Employee
 Add foreign key (MSIN) References "Optimize".Manager(SIN);
 
 CREATE TABLE "Optimize".Department (  
-DepartmentId INT Primary Key);
+DepartmentId INT Primary Key,
+msin char(9), 
+Foreign key msin references Manager(SIN));
 
 Alter Table "Optimize".Employee
 Add Foreign key (DepartmentID) references "Optimize".Department(DepartmentID);
@@ -48,6 +50,7 @@ CREATE TABLE PAYROLL (
 SIN CHAR (9) NOT NULL,  
 Week INT CHECK(Week>=1 AND Week <= 52) not null, 
 Quantity Decimal(6,2),
+authorized boolean default false, 
 Primary key (SIN, Week),
 FOREIGN key (SIN) REFERENCES Employee(SIN));
 
@@ -64,12 +67,12 @@ SIN  CHAR(9) NOT NULL,
 Update_SIN CHAR (9) NOT NULL,  
 PRIMARY KEY (SIN, Week),
 FOREIGN KEY (SIN) REFERENCES EMPLOYEE(SIN),
-Foreign key (Update_SIN) REFERENCES MANAGER (SIN));
+Foreign key (Update_SIN) REFERENCES MANAGER(SIN));
 
 CREATE TABLE Shift (  
 Day INT Check(Day >= 1 AND day <=31) NOT NULL,  
 Week INT CHECK(Week>=1 AND Week <= 52) NOT NULL,
-Month VARCHAR(9) NOT NULL, 
+Month int NOT NULL, 
 MSIN CHAR(9) NOT NULL,  
 ESIN CHAR(9) NOT NULL,  
 LENGTH DECIMAL(6,2),                                             
@@ -120,19 +123,37 @@ PRIMARY KEY (SIN, TaskId),
 FOREIGN KEY (SIN) REFERENCES EMPLOYEE(SIN),
 FOREIGN KEY (TASKID) REFERENCES TASK (TASKID));
 
+
 Create table Request (
 ID int NOt Null, 
 Week INT CHECK (Week>=1 AND Week <= 52) not null,
 Day	 int check(day >= 1 AND day<=31) not null, 
-month varchar(9) not null,
+-- month varchar(9) not null,
 FromSIN	CHar(9)	NOt null, 
 ToSIN Char(9) Not null, 
-Type	varchar(30) not null, 
-Acknowledged	boolean not null,
+Type	varchar(30) check (Type =='Off' or Type == 'Shift Change') not null,
+Acknowledged boolean,
 Primary key (ID),
 Foreign key (ToSIN) references Manager(SIN),
 Foreign key (FromSIN, week, day, month) references shift(ESIN, week, day, month));
 
+create table hi (
+Type varchar(30) check(Type ='Off' OR Type = 'Shift Change') not null, 
+primary key (type)
+)
+
+Create Table notifications (
+id int	Not null,
+to_msin char(9),
+to_sin char(9),
+request_id	int,
+message text not null,
+created_at time not null, 
+read boolean not null, 
+primary key (id),
+Foreign key (request_id) references request(id),
+Foreign key (to_msin) references manager(sin),
+Foreign key (to_sin) references employee(sin))
 
 Insert into Department
 Values (3);
@@ -142,14 +163,43 @@ Values (111111111, 'Peter Parker', 4032345677, '2717 Hocus Pocus Drive, Calgary,
 
 
 
-Insert into Employee
+Insert into employee
 Values (123456789, 'Victoria Parker', 4031233456, '2716 Hocus Pocus Drive, Calgary, Alberta, T2A45K', 3, 'VParker@optimanage.ca', 'VictoriaParker', 111111111, 19.50);
+
+
+Insert into employee
+Values (123456779, 'Victoria Parker', 4031233456, '2716 Hocus Pocus Drive, Calgary, Alberta, T2A45K', 3, 'VParker@optimanage.ca', 'VictoriaParker', 111111111, 19.50);
+
+
+Insert into Shift
+values (3, 32, 'Monday', 111111111,123456789, 3.0 );
+Insert into Shift
+values (3, 31, 'Monday', 111111111,123456789, 3.0 );
+Insert into Shift
+values (3, 31, 'Monday', 111111111,123456779, 3.0 );
+
+Insert into Shift
+values (3, 32, 'Monday', 111111111,123456789, 3.0 );
+
+
+Insert into Schedule 
+values (31,123456789, 111111111 );
+
+Insert into Schedule 
+values (31,123456789, 111111111 );
+Insert into Schedule 
+values (31,123456779, 111111111 );
+
+
 
 
 Select *
 From Schedule as S
-Join Shift as H on S.Week = H.Week
-Where S.SIN = $s1;
+Inner Join Shift on Shift.Week = S.Week
+Where shift.ESIN = $1
+AND Shift.Week >= $2
+AND Shift.Week <= $3
+AND Shift.ESIN = S.SIN;
 
 
 
