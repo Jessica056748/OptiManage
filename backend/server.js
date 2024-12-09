@@ -702,11 +702,11 @@ app.get('/shifts/department', authenticateToken, async (req, res) => {
     try {
         // Base query to fetch shifts for employees in the manager's department
         let query = `
-            SELECT s.day, s.week, s.month, s.length, s.esin, employee.name AS employee_name
+            SELECT s.day, s.week, s.month, s.length, s.esin, e.name AS employee_name
             FROM shift AS s
-            INNER JOIN employee ON shift.esin = employee.sin
-            INNER JOIN department ON employee.departmentid = department.departmentid
-            WHERE department.msin = $1
+            INNER JOIN employee AS e ON s.esin = e.sin
+            INNER JOIN department AS d ON e.departmentid = d.departmentid
+            WHERE d.msin = $1
         `;
         const params = [msin];
 
@@ -720,7 +720,7 @@ app.get('/shifts/department', authenticateToken, async (req, res) => {
             params.push(month);
         }
         // Order shifts by week and day
-        query += 'ORDER BY shift.week, shift.day';
+        query += 'ORDER BY s.week, s.day';
 
         const result = await pool.query(query, params);
 
