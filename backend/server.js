@@ -63,6 +63,11 @@ app.post('/create-manager', async (req, res) => {
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING sin;
     `;
+    const updateDepartmentQuery = `
+        UPDATE department
+        SET msin = $1
+        WHERE departmentid = $2
+    `;
     try {
         // 1. Sanitize user inputs
         if (!sin || !address || !email || !name || !password) {
@@ -83,9 +88,13 @@ app.post('/create-manager', async (req, res) => {
         // 4. Insert a new manager if the username doesn't exist
         const insertResult = await pool.query(insertQuery, insertValues);
 
+        // 5. Update the department with the manager's sin
+        const updateValues = [sin, departmentid];
+        await pool.query(updateDepartmentQuery, updateValues);
+
         // 5. Respond with success
         res.status(201).json({
-            message: 'Manager account created successfully',
+            message: 'Manager account created successfully and assigned to department',
             managerId: insertResult.rows[0].sin
         });
     } catch (error) {
