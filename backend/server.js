@@ -841,21 +841,20 @@ app.get('/shifts/department', authenticateToken, async (req, res) => {
             FROM shift AS s
             INNER JOIN employee AS e ON s.esin = e.sin
             INNER JOIN department AS d ON e.departmentid = d.departmentid
-            WHERE d.msin = $1
-        `
+            WHERE d.msin = $1`
     const params = [msin]
 
     // Add filters for week and/or month if provided
     if (week) {
-      query += ` AND s.week = $${params.length + 1}`
+      query += `\nAND s.week = $${params.length + 1}`
       params.push(week)
     }
     if (month) {
-      query += `AND s.month = $${params.length + 1}`
+      query += `\nAND s.month = $${params.length + 1}`
       params.push(month)
     }
     // Order shifts by week and day
-    query += 'ORDER BY s.week, s.day'
+    query += '\nORDER BY s.week, s.day'
 
     const result = await pool.query(query, params)
 
