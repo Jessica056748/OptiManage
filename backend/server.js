@@ -21,16 +21,15 @@ function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'] // Get authorization header
   const token = authHeader && authHeader.split(' ')[1] // Extract token
 
-  if (!token)
+  if (!token) {
     return res.status(401).json({ error: 'Access denied. Token missing.' })
-
+  }
   try {
     // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     req.user = decoded // Attach decoded payload to the request object
     next() // Continue, skipping rest of the code
   } catch (error) {
-    console.log('Error authenticating token:', error)
     return res.status(403).json({ error: 'Invalid or expired token.' })
   }
 }
@@ -58,7 +57,6 @@ app.get('/test-db', async (req, res) => {
 // createManager function (POST method)
 app.post('/create-manager', async (req, res) => {
   const { sin, name, phone, address, departmentid, email, password } = req.body // Get parameters from request body
-
   const queryText = `
         SELECT *
         FROM MANAGER
@@ -69,6 +67,11 @@ app.post('/create-manager', async (req, res) => {
         INSERT INTO MANAGER (sin, name, phone, address, departmentid, email, password)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING sin;
+    `
+  const updateDepartmentQuery = `
+        UPDATE department
+        SET msin = $1
+        WHERE departmentid = $2
     `
   try {
     // 1. Sanitize user inputs
@@ -101,9 +104,14 @@ app.post('/create-manager', async (req, res) => {
     // 4. Insert a new manager if the username doesn't exist
     const insertResult = await pool.query(insertQuery, insertValues)
 
+    // 5. Update the department with the manager's sin
+    const updateValues = [sin, departmentid]
+    await pool.query(updateDepartmentQuery, updateValues)
+
     // 5. Respond with success
     res.status(201).json({
-      message: 'Manager account created successfully',
+      message:
+        'Manager account created successfully and assigned to department',
       managerId: insertResult.rows[0].sin,
     })
   } catch (error) {
@@ -193,7 +201,8 @@ app.post('/authenticate', async (req, res) => {
 })
 
 // Add employee function
-app.post('/add-employee', async (req, res) => {
+app.post('/add-employee', authenticateToken, async (req, res) => {
+  const { role } = req.user // Get role from JWT
   const {
     sin,
     name,
@@ -230,6 +239,10 @@ app.post('/add-employee', async (req, res) => {
         `
   const departmentidValue = [departmentid]
   try {
+    if (role !== 'manager') {
+      return res.status(400).json({ error: 'Only managers can add employees' })
+    }
+
     // Sanitize user inputs
     if (
       !sin ||
@@ -297,6 +310,54 @@ app.post('/add-employee', async (req, res) => {
   } catch (error) {
     console.error('Error creating employee', error.message)
     res.status(500).json({ error: 'Failed to create Employee' })
+  }
+})
+
+// Endpoint for changing user password
+app.patch('/change-password', authenticateToken, async (req, res) => {
+  const { sin, role } = req.user // Get sin and role from JWT
+  const { currentPassword, newPassword, confirmPassword } = req.body // Get passwords from request body
+
+  try {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({ error: 'All fields are required' })
+    }
+    if (newPassword !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ error: 'New password must match confirmation password' })
+    }
+    // Select table based on user role
+    const table = role === 'manager' ? 'manager' : 'employee' // if role is manager, choose manager, else choose employee
+
+    // Fetch current hashed password from the database
+    const query = `SELECT password FROM ${table} WHERE sin = $1`
+    const result = await pool.query(query, [sin])
+
+    if (result.rows.length === 0) {
+      return res.status(400), json({ error: 'User not found' })
+    }
+
+    const hashedPassword = result.rows[0].password
+
+    // Compare current password with hashed password
+    const isMatch = await bcrypt.compare(currentPassword, hashedPassword)
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Current password is incorrect' })
+    }
+
+    // Hash the new password
+    const saltRounds = 12
+    const newHashedPassword = await bcrypt.hash(newPassword, saltRounds)
+
+    // Update new password in database
+    const updateQuery = `UPDATE ${table} SET password = $1 WHERE sin = $2`
+    await pool.query(updateQuery, [newHashedPassword, sin])
+
+    res.status(200).json({ message: 'Password updated successfully.' })
+  } catch (error) {
+    console.error('Error changing password: ', error.message)
+    res.status(500).json({ error: 'Failed to update password.' })
   }
 })
 
@@ -776,16 +837,17 @@ app.get('/shifts/department', authenticateToken, async (req, res) => {
   try {
     // Base query to fetch shifts for employees in the manager's department
     let query = `
-            SELECT s.day, s.week, s.month, s.length, s.esin, employee.name AS employee_name
+            SELECT s.day, s.week, s.month, s.length, s.esin, e.name AS employee_name
             FROM shift AS s
-            INNER JOIN employee ON shift.esin = employee.sin
-            INNER JOIN department ON employee.departmentid = department.departmentid
-            WHERE department.msin = $1`
+            INNER JOIN employee AS e ON s.esin = e.sin
+            INNER JOIN department AS d ON e.departmentid = d.departmentid
+            WHERE d.msin = $1
+        `
     const params = [msin]
 
     // Add filters for week and/or month if provided
     if (week) {
-      query += `AND s.week = $${params.length + 1}`
+      query += ` AND s.week = $${params.length + 1}`
       params.push(week)
     }
     if (month) {
@@ -793,7 +855,7 @@ app.get('/shifts/department', authenticateToken, async (req, res) => {
       params.push(month)
     }
     // Order shifts by week and day
-    query += 'ORDER BY shift.week, shift.day'
+    query += 'ORDER BY s.week, s.day'
 
     const result = await pool.query(query, params)
 
@@ -925,9 +987,299 @@ app.delete('/shift', authenticateToken, async (req, res) => {
   }
 })
 
+// Endpoint for calculating payroll
+app.post('/payroll/calculate', authenticateToken, async (req, res) => {
+  const { sin: managerSin } = req.user // get mSin from JWT
+  const { employee_sin } = req.body // Parameter (optional) to calculate for a specific employee
+  const currentDate = new Date()
+  const currentMonth = currentDate.getMonth() + 1 // Get month of the year
+  const currentWeek = getWeekOfYear(currentDate) // Get the week of the year
+
+  try {
+    // Get departmentid from manager table
+    const departmentidQuery = `SELECT departmentid FROM manager WHERE sin = $1`
+    const departmentidResult = await pool.query(departmentidQuery, [managerSin])
+
+    if (departmentidResult.rows.length === 0) {
+      return res.status(404).json({ error: "Manager's department not found" })
+    }
+    const departmentid = departmentidResult.rows[0].departmentid
+
+    let payrollQuery, params
+
+    if (employee_sin) {
+      // Calculate payroll for a specific employee
+      payrollQuery = `
+                SELECT e.sin, e.rate, SUM(s.length) AS total_hours
+                FROM employee AS e
+                JOIN shift AS s ON e.sin = s.esin
+                WHERE e.sin = $1 
+                AND s.month = $2 
+                AND s.week <= $3 
+                GROUP BY e.sin, e.rate, s.week;
+            `
+      params = [employee_sin, currentMonth, currentWeek]
+    } else {
+      // Calculate payroll for all the employees in manager's department
+      payrollQuery = `
+                SELECT e.sin, e.rate, SUM(s.length) AS total_hours
+                FROM employee AS e
+                JOIN shift AS s ON e.sin = s.esin
+                WHERE e.departmentid = $1
+                AND s.month = $2
+                AND s.week <= $3
+                GROUP BY e.sin, e.rate, s.week;
+            `
+      params = [departmentid, currentMonth, currentWeek]
+    }
+    const payrollResult = await pool.query(payrollQuery, params)
+
+    // If no shifts found
+    if (payrollResult.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: 'No shifts found for payroll calculation' })
+    }
+    // Calculate payroll for each employee
+    const payrolls = payrollResult.rows.map(row => ({
+      sin: row.sin,
+      totalHours: row.total_hours,
+      rate: row.rate,
+      totalPay: parseFloat(row.total_hours) * parseFloat(row.rate),
+    }))
+
+    // Insert payrolls into the database
+    for (const payroll of payrolls) {
+      const insertQuery = `
+                INSERT INTO payroll (sin, week, quantity)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (sin, week)
+                DO UPDATE SET quantity = EXCLUDED.quantity;
+            `
+      await pool.query(insertQuery, [
+        payroll.sin,
+        currentWeek,
+        payroll.totalPay,
+      ])
+    }
+    res.status(200).json({
+      message: 'Payroll calculated successfully',
+      payrolls,
+    })
+  } catch (error) {
+    console.error('Error calculating payroll: ', error.message)
+    res.status(500).json({ error: 'Failed to calculate payroll' })
+  }
+})
+
+// Endpoint for employees to view their payrolls once authorized
+app.get('/payroll/employee', authenticateToken, async (req, res) => {
+  const { sin: employeeSin } = req.user // Get sin from JWT
+
+  try {
+    // Query to fetch authorized payrolls for the employee
+    const query = `
+            SELECT week, quantity, authorized
+            FROM payroll
+            WHERE sin = $1 AND authorized = TRUE;
+        `
+    const result = await pool.query(query, [employeeSin])
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ message: 'No authorized payrolls found.' })
+    }
+    // Get payroll data
+    res.status(200).json({
+      message: 'Authorized payrolls retrieved successfully',
+      payrolls: result.rows,
+    })
+  } catch (error) {
+    console.error('Error fetching employee payroll: ', error.message)
+    res.status(500).json({ error: 'Failed to fetch payrolls.' })
+  }
+})
+
+// Endpoint for managers to view payrolls for their departments or specific employees
+app.get('/payroll/manager', authenticateToken, async (req, res) => {
+  const { sin: managerSin, role } = req.user // Get manager's sin and role from JWT
+  const { employee_sin } = req.query // Filter by employee
+
+  if (role != 'manager') {
+    return res.status(403).json({
+      message:
+        'Unauthorized access. Only managers can view department payrolls',
+    })
+  }
+  try {
+    // Get departmentid from manager table
+    const departmentidQuery = `SELECT departmentid FROM manager WHERE sin = $1`
+    const departmentidResult = await pool.query(departmentidQuery, [managerSin])
+
+    if (departmentidResult.rows.length === 0) {
+      return res.status(404).json({ error: "Manager's department not found" })
+    }
+    const departmentid = departmentidResult.rows[0].departmentid
+
+    let query, params
+    // Query for a specific employe in the manager's department
+    if (employee_sin) {
+      query = `
+                SELECT e.sin AS employee_sin, e.name AS employee_name, p.week, p.quantity, p.authorized
+                FROM payroll AS P JOIN employee AS e ON p.sin = e.sin
+                WHERE e.sin = $1 AND e.departmentid = $2
+                ORDER BY p.week;
+            `
+      params = [employee_sin, departmentid]
+    } else {
+      // Query for all employees in the manager's department
+      query = `
+                SELECT e.sin AS employee_sin, e.name AS employee_name, p.week, p.quantity, p.authorized
+                FROM payroll AS p JOIN employee AS e ON p.sin = e.sin
+                WHERE e.departmentid = $1
+                ORDER BY e.sin, p.week;
+            `
+      params = [departmentid]
+    }
+    const result = await pool.query(query, params)
+
+    // If no payrolls are found
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: employee_sin
+          ? `No payrolls found for employee with SIN ${employee_sin}.`
+          : `No payrolls found for department ${departmentid}.`,
+      })
+    }
+    // Group payrolls by employee
+    const payrolls = result.rows.reduce((acc, row) => {
+      const employeeKey = row.employee_sin
+      if (!acc[employeeKey]) {
+        acc[employeeKey] = {
+          name: row.employee_name,
+          payrolls: [],
+        }
+      }
+      acc[employeeKey].payrolls.push({
+        week: row.week,
+        quantity: row.quantity,
+        authorized: row.authorized,
+      })
+      return acc
+    }, {})
+
+    // Return payroll data grouped by employee
+    res.status(200).json({
+      message: employee_sin
+        ? `payroll retrieved successfully for employee ${employee_sin}.`
+        : `payrolls retrieved successfully for department ${departmentid}.`,
+      payrolls,
+    })
+  } catch (error) {
+    console.error('Error fetching department payroll: ', error.message)
+    res.status(500).json({ error: 'Failed to fetch payrolls.' })
+  }
+})
+
+// Endpoint for authorizing payrolls
+app.post('/payroll/authorize', authenticateToken, async (req, res) => {
+  const { sin: managerSin, role } = req.user // Extract manager's sin and role from JWT
+  const { employee_sins, weeks } = req.body // Employees or weeks to authorize
+
+  if (role != 'manager') {
+    return res.status(403).json({
+      message: 'Unauthorized access. Only managers can authorize payrolls.',
+    })
+  }
+
+  try {
+    // Get department ID for the manager
+    const departmentQuery = `SELECT departmentid FROM manager WHERE sin = $1`
+    const departmentResult = await pool.query(departmentQuery, [managerSin])
+
+    if (departmentResult.rows.length === 0) {
+      return res.status(404).json({ error: "Manager's department not found." })
+    }
+    const departmentId = departmentResult.rows[0].departmentid
+
+    let updateQuery, params
+
+    if (employee_sins && employee_sins.length > 0) {
+      // authorize specific employees' payrolls
+      updateQuery = `
+                UPDATE payroll
+                SET authorized = true
+                WHERE sin = ANY($1) AND week = ANY($2)
+                AND sin IN (
+                            SELECT sin 
+                            FROM employee
+                            WHERE departmentid = $3)
+                RETURNING sin, week;
+        `
+      params = [employee_sins, weeks, departmentId]
+    } else {
+      // Authorize all payrolls for the dept
+      updateQuery = `
+                UPDATE payroll
+                SET authorized = true
+                WHERE week = ANY($1)
+                AND sin IN (
+                            SELECT sin
+                            FROM employee
+                            WHERE departmentid = $2)
+                RETURNING sin, week;
+        `
+      params = [weeks, departmentId]
+    }
+    const result = await pool.query(updateQuery, params)
+
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: 'No payrolls found to authorize.' })
+    }
+
+    // Send notifications to employees whose payrolls were authorized
+    const notifications = result.rows.map(row => ({
+      to_sin: row.sin,
+      message: 'Your payroll has been authorized and is ready for viewing.',
+    }))
+
+    const notificationQuery = `
+            INSERT INTO notifications (to_sin, message)
+            VALUES ($1, $2)
+        `
+    for (const notification of notifications) {
+      await pool.query(notificationQuery, [
+        notification.to_sin,
+        notification.message,
+      ])
+    }
+
+    res.status(200).json({
+      message: 'Payrolls authorized successfully and notifications sent.',
+      authorizedPayrolls: result.rows,
+    })
+  } catch (error) {
+    console.error('Error authorizing payrolls: ', error.message)
+    res.status(500).json({ error: 'Failed to authorize payrolls.' })
+  }
+})
+
+// Function to calculate current week of the year
+function getWeekOfYear(date) {
+  // Clone the date
+  // Get first day of the year
+  const firstDayOfYear = new Date(date.getFullYear(), 0, 1)
+
+  // Calculate days that passed from start of year (division by milliseconds)
+  const pastDaysOfYear = Math.ceil((date - firstDayOfYear) / 86400000)
+
+  // Calculate the ISO week number (according to the Gregorian calendar)
+  return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay()) / 7)
+}
+
 // Start the server
 app.listen(PORT, () => {
   // PORT to listen for requests
-  console.clear()
   console.log(`Server is running on http://localhost:${PORT}`)
 })
