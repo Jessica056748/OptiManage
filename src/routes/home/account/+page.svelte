@@ -4,6 +4,7 @@
   import { getUserContext } from '../../../context'
   ;("I know you said to let you try, but idc, here's the info of the currently logged in user 😊")
   let user = getUserContext()
+  console.log('user:', user)
 </script>
 
 <h1>Personal Information</h1>

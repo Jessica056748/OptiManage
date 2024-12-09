@@ -1,22 +1,38 @@
 <script lang="ts">
   import { getUserContext } from '../../context'
-  import PopUp from './PopUp.svelte'
+  import type { PopUpData } from '../../types'
 
-  const { _classes, day }: { _classes: Array<String>; day: number } = $props()
-  let user = getUserContext(),
-    popup = $state(false)
+  let {
+    _classes,
+    day,
+    month,
+    datePopUp = $bindable(),
+  }: {
+    _classes: Array<String>
+    day: number
+    month: number
+    datePopUp: PopUpData | undefined
+  } = $props()
+
+  let user = getUserContext()
 </script>
 
-{#if popup}
-  <PopUp />
-{/if}
-<!-- <a aria-label="date" onclick={() => (popup = false)} href={void 0}> -->
-<!-- <div class={_classes.join(' ')}>{day}</div> -->
-<!-- </a> -->
-<div class={_classes.join(' ')}><a href={void 0}>{day}</a></div>
+<div class={_classes.join(' ')}>
+  <a
+    href={void 0}
+    onclick={() => {
+      const popUpData = { month, day }
+
+      datePopUp = popUpData
+    }}>{day}, {month}</a
+  >
+</div>
 
 <style>
   a {
+    display: block;
+    width: 100%;
+    height: 100%;
     color: white;
     font-weight: normal;
   }
@@ -26,13 +42,15 @@
     border-width: 1px 0;
     aspect-ratio: 1 / 1;
   }
-  .today {
+  .today,
+  .today a {
     font-weight: bold;
     border-width: 1px;
     color: hsl(237, 100%, 70%);
     border-color: hsl(237, 100%, 70%);
     background-color: hsla(0, 0%, 0%, 0.2);
   }
+
   .grayed {
     color: hsl(0, 0%, 70%);
     background-color: hsla(0, 71%, 16%, 0.3);

@@ -15,5 +15,9 @@ type User = {
   iat: number
   exp: number
 }
+type PopUpData = {
+  day: number
+  month: number
+}
 
-export { Role, type Shift, type User }
+export { Role, type Shift, type User, type PopUpData }

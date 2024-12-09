@@ -15,12 +15,12 @@ Should be prioritized given the time crunch we're in.
 - Update state user information and redirect to homepage if they access the authentication (/) page when they're already authenticated.
 - Finish home page
   ✅ Add calendar field
-  - Populate calendar field with shift information 
+  🎯 Populate calendar field with shift information 
   ✅ Style page
 - Add account page
   - Add account modification buttons and integrate with backend
   - Style page
-- Add pop-up component, to show whenever a calendar day is clicked, with options to edit
+🎯 Add pop-up component, to show whenever a calendar day is clicked, with options to edit
 - Enable the user to logout on all pages
   ✅ update state
   - remove jwt
@@ -36,7 +36,9 @@ Should be prioritized given the time crunch we're in.
 - ⚠️ Pending Security Fix: the backend error message should **not** specify which field - the email or password - failed during authentication; this would give potential attackers more information to work on. Simply state "invalid credentials" or something, but don't specify which credentials are incorrect.
 - Load all user information upon authentication, and store in state
 
-✅⚠️🎯
+✅: done
+⚠️: concerning
+🎯: currently working on
 
 ## Concerns or Questions
 

@@ -10,8 +10,6 @@ import { type User } from '../../types.js'
 export async function load({ cookies }) {
   const token = cookies.get('jwt')
 
-  // TODO: check why using role is causing issues. For now, just use the token.
-  // if (globalState.role === Role.None || !token) throw redirect(307, '/')
   if (!token) throw redirect(307, '/')
 
   const response = await fetch(`http://localhost:${PORT}/verify`, {
