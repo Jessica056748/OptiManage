@@ -166,7 +166,8 @@ app.post('/authenticate', async (req, res) => {
 })
 
 // Add employee function
-app.post('/add-employee', async (req, res) => {
+app.post('/add-employee', authenticateToken, async (req, res) => {
+    const {role} = req.user;   // Get role from JWT
     const {sin, name, phone, address, departmentid, email, password, msin, rate} = req.body;          // Get parameters from request body
     const queryText = `
         SELECT *
@@ -193,6 +194,10 @@ app.post('/add-employee', async (req, res) => {
         `;
     const departmentidValue = [departmentid];
     try {
+        if (role !== 'manager') {
+            return res.status(400).json({error: 'Only managers can add employees'});
+        }
+
         // Sanitize user inputs
         if (!sin || !address || !email || !name || !password || !msin || !rate || !departmentid) { 
             return res.status(400).json({error: 'SIN, name, address, email, manager SIN, rate and password are required'}); 
