@@ -146,7 +146,7 @@ app.post('/authenticate', async (req, res) => {
         // 4. Compare hashed password
         const passwordMatch = await bcrypt.compare(password, user.password); // Returns a boolean stating whether it's a match (T) or not (F)
         if (!passwordMatch) {
-            return res.status(401).json({error: 'Invalid password'});
+            return res.status(401).json({error: 'Invalid credentials'});
         }
 
         // 5. Generate a JWT token
