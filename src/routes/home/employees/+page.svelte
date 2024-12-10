@@ -5,7 +5,13 @@
     password1: string = $state(''),
     password2: string = $state('')
   const { data } = $props(),
-    { token } = data
+    {
+      token,
+      user: { sin },
+    } = data
+
+  $inspect(password1)
+  $inspect(password2)
 
   /**
    * Attempts to create a new employee under the current manager and department.
@@ -14,10 +20,12 @@
     event.preventDefault()
     // @ts-ignore
     const body = Object.fromEntries(new FormData(event.target))
+
+    delete body['password-check']
+    body.msin = sin
     let status
-    console.log('body:', body)
     try {
-      const response = await fetch(`http://localhost:${PORT}/create-employee`, {
+      const response = await fetch(`http://localhost:${PORT}/add-employee`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -37,6 +45,7 @@
 
     if (status === 401) {
       // Operation was unsuccessful due to a client error.
+      // TODO: notify manager.
       return
     }
 
@@ -135,7 +144,7 @@
         <input
           type="password"
           name="password"
-          value={password1}
+          bind:value={password1}
           placeholder="PeterParker"
           required
         />
@@ -146,7 +155,7 @@
         <input
           type="password"
           name="password-check"
-          value={password2}
+          bind:value={password2}
           placeholder="PeterParker"
           class={password1 !== password2 ? 'invalid' : 'valid' + ' checker'}
           required
