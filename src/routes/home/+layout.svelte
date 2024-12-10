@@ -10,9 +10,6 @@
     { user } = data
   let path = $state($page.url.pathname)
 
-  console.log('user:', user)
-  user.role
-
   setUserContext(user)
   $effect(() => {
     path = $page.url.pathname
