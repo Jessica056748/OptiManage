@@ -151,7 +151,7 @@
           name="password-check"
           bind:value={password2}
           placeholder="PeterParker"
-          class={password1 !== password2 ? 'invalid' : 'valid' + ' checker'}
+          class={password1 === password2 ? 'valid' : 'invalid' + ' checker'}
           required
         />
       </label>

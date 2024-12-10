@@ -5,7 +5,8 @@
   let { signingUp = $bindable() }: { signingUp: boolean } = $props(),
     user = getUserContext(),
     password1: string = $state(''),
-    password2: string = $state('')
+    password2: string = $state(''),
+    warn: string = $state('')
 
   /**
    * Sends a signup request to the server, updating the database as well as the App state if successful.
@@ -14,8 +15,19 @@
     event.preventDefault()
     // @ts-ignore
     const body = Object.fromEntries(new FormData(event.target))
+
+    console.log('body:', body)
+
+    if (password1 !== password2) {
+      warn = 'warn'
+      setTimeout(() => (warn = ''), 1_000)
+      return
+    }
+
     delete body['password-check']
     let status
+
+    return
 
     try {
       const response = await fetch(`http://localhost:${PORT}/create-manager`, {
@@ -115,10 +127,31 @@
   <!-- TODO: add a second password field to prevent typos. -->
   <label>
     Password
-
-    <input type="password" name="password" placeholder="PeterParker" required />
+    <input
+      type="password"
+      name="password"
+      bind:value={password1}
+      placeholder="PeterParker"
+      class={password1 === password2 ? 'valid' : 'invalid'}
+      required
+    />
   </label>
 
+  <label>
+    Re-enter Password
+    <input
+      type="password"
+      name="password-check"
+      bind:value={password2}
+      placeholder="PeterParker"
+      class={password1 === password2 ? 'valid' : 'invalid' + ' checker'}
+      required
+    />
+  </label>
+
+  {#if password1 !== password2}
+    <p class={warn}>Passwords should match.</p>
+  {/if}
   <input type="submit" value="Create Account!" />
 
   <div>
@@ -143,6 +176,16 @@
   form:hover {
     border-color: hsl(237, 100%, 70%);
   }
+  .checker {
+    border: 3px solid transparent;
+    transition: border-color 0.25s;
+  }
+  .valid {
+    border: 3px solid green;
+  }
+  .invalid {
+    border: 3px solid red;
+  }
 
   h2,
   div {
@@ -150,9 +193,12 @@
   }
   label {
     display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
+  }
+  label input {
+    width: 50%;
   }
   input:not([type='submit']) {
     width: 100%;
@@ -160,6 +206,10 @@
 
   input[type='submit'] {
     align-self: center;
+  }
+
+  .warn {
+    animation: warn 1s ease;
   }
 
   @media (prefers-color-scheme: light) {
@@ -179,19 +229,37 @@
 
   @media only screen and (min-width: 700px) {
     form {
-      width: 45%;
+      width: 80%;
     }
     input:not([type='submit']) {
-      width: 90%;
+      width: 50%;
     }
   }
 
   @media only screen and (min-width: 1000px) {
     form {
-      width: 30%;
+      width: 50%;
     }
     input:not([type='submit']) {
-      width: 80%;
+      width: 50%;
+    }
+  }
+
+  @keyframes warn {
+    0% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-15px);
+    }
+    50% {
+      color: red;
+    }
+    75% {
+      transform: translateX(15px);
+    }
+    100% {
+      transform: translateX(0);
     }
   }
 </style>
