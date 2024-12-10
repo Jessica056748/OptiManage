@@ -1,7 +1,11 @@
 <script lang="ts">
+  const { VITE_BACKEND_PORT: PORT } = import.meta.env
+
   let adding: boolean = $state(false),
     password1: string = $state(''),
     password2: string = $state('')
+  const { data } = $props(),
+    { token } = data
 
   /**
    * Attempts to create a new employee under the current manager and department.
@@ -11,12 +15,13 @@
     // @ts-ignore
     const body = Object.fromEntries(new FormData(event.target))
     let status
-
+    console.log('body:', body)
     try {
-      const response = await fetch(`http://localhost:${PORT}/create-manager`, {
+      const response = await fetch(`http://localhost:${PORT}/create-employee`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(body),
         }),
@@ -37,7 +42,8 @@
 
     if (status === 200) {
       // Operation was successful.
-      user.role = Role.Manager
+      // Maybe notifying the manager is not necessary, as this component will show an enumeration of the employees.
+      adding = false
     }
 
     // Otherwise, something else went wrong. Give a vague "try again" message here.
@@ -48,6 +54,16 @@
   {#if !adding}
     <button onclick={() => (adding = true)}>Add Employee</button>
   {:else}
+    <!-- Fields that need to be included -->
+    <!-- sin,
+    G   name,
+    G phone,
+    G address,
+    G departmentid,
+    G email,
+    G password,
+    msin,
+    rate, -->
     <form onsubmit={addEmployee}>
       <!-- TODO: remove "required" from nullable fields, especially department id. -->
       <h2>Add new employee</h2>
@@ -107,6 +123,11 @@
         <input type="number" name="departmentid" placeholder="3" required />
       </label>
 
+      <label>
+        Hourly Rate
+        <input type="number" name="rate" placeholder="15" required />
+      </label>
+
       <!-- TODO: add a second password field to prevent typos. -->
       <label>
         Password
@@ -123,10 +144,11 @@
       <label>
         Re-enter Password
         <input
-          type="password2"
-          name="password"
+          type="password"
+          name="password-check"
           value={password2}
           placeholder="PeterParker"
+          class={password1 !== password2 ? 'invalid' : 'valid' + ' checker'}
           required
         />
       </label>
@@ -136,10 +158,7 @@
       {/if}
       <input type="submit" value="Add Employee!" />
 
-      <div>
-        Already have an account?<br />
-        <button type="button" onclick={() => (adding = false)}>Cancel</button>
-      </div>
+      <button type="button" onclick={() => (adding = false)}>Cancel</button>
     </form>
   {/if}
 </div>
@@ -160,5 +179,15 @@
   }
   form:hover {
     border-color: hsl(237, 100%, 70%);
+  }
+  .checker {
+    border: 3px solid transparent;
+    transition: border-color 0.25s;
+  }
+  .valid {
+    border: 3px solid green;
+  }
+  .invalid {
+    border: 3px solid red;
   }
 </style>

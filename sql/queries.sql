@@ -65,7 +65,7 @@ create table Shift
                                                              and Week <= 52 ) not null, month varchar(9) not null, MSIN char(9) not null, ESIN char(9) not null, start time not null, LENGTH decimal(6, 2), primary KEY (day, Week, month, ESIN),
    foreign KEY (ESIN) references EMPLOYEE (sin),
    foreign KEY (MSIN) references MANAGER (sin) );
-
+  
 
 create table Availability ( sin char(9) not null, Weekday char(10) not null, EMP_START time not null, EMP_END time not null, primary key (sin, Weekday),
                            foreign key (sin) references EMPLOYEE (sin) );

@@ -28,5 +28,5 @@ export async function load({ cookies }) {
   // @ts-ignore
   user.role = user.role === 'manager' ? Role.Manager : Role.Employee
 
-  return { user }
+  return { user, token }
 }
