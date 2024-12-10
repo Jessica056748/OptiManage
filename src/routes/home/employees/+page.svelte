@@ -169,19 +169,13 @@
 <style>
   form {
     width: 80%;
-    border: 1px solid transparent;
-
     color: white;
-    background-color: hsl(0, 0%, 20%);
     border-radius: 10px;
     padding: 20px;
     display: flex;
     flex-direction: column;
     row-gap: 10px;
     transition: border-color 0.25s;
-  }
-  form:hover {
-    border-color: hsl(237, 100%, 70%);
   }
   .checker {
     border: 3px solid transparent;

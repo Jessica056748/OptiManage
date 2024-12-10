@@ -2,6 +2,7 @@
 
 set search_path to "Optimize";
 
+DELETE FROM shift;
 -- values (13,
 --         2,
 --         11,
@@ -17,9 +18,7 @@ set search_path to "Optimize";
 --         111111111,
 --         5,
 --         '11:00:00');
-
-
--- delete everything from shift.
+ -- delete everything from shift.
 -- TRUNCATE table shift;
  -- ALTER TABLE department ADD COLUMN msin CHAR(9);
  -- ALTER TABLE department ADD CONSTRAINT fk_msin
