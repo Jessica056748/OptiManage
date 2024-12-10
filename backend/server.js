@@ -493,40 +493,38 @@ app.post('/availability', authenticateToken, async (req, res) => {
 // Endpoint for managers to fetch employee availability
 app.get('/availability', authenticateToken, async (req, res) => {
     const {weekday, sin: employeeSin} = req.query; // Extract filters from query parameters
-    const {sin, role} = req.user;   // Extract manager SIN and role from JWT
+    const {msin, role} = req.user;   // Extract manager SIN and role from JWT
 
     try {
         // Make sure only managers can access this endpoint
         if (role !== 'manager') {
             return res.status(403).json({error: 'Access denied. Only managers can view availability'});
         }
-
-        // Build dynamic query based on filters
-        let query = `
+        if (!employeeSin) {
+            return res.status(400).json({error: 'Employee SIN is required to fetch availability'});
+        }
+        // Query the availability table for the employee
+        const query = `
             SELECT sin, weekday, emp_start, emp_end
             FROM availability
+            WHERE sin = $1
         `;
-        const params = [];
+        const result = await pool.query(query, [employeeSin]);
 
-        if (weekday || employeeSin) {
-            query += ' WHERE ';
-            if (weekday) {
-                params.push(weekday);
-                query += `weekday = $${params.length}`;
-            }
-            if (employeeSin) {
-                params.push(employeeSin);
-                if (weekday) query += ' AND ';
-                query += `sin = $${params.length}`;
-            }
+        if (result.rowCount === 0) {
+            const defaultAvailability = Array.from({length: 7}, (_, i) => ({
+                sin: employeeSin,
+                weekday: i + 1, // days 1-7 for Monday-Sunday
+                emp_start: '00:00:00',
+                emp_end: '23:59:59'
+            }));
+            
+            return res.status(200).json(defaultAvailability); // Availability is assumed 24/7
         }
-        query += ' ORDER BY weekday, emp_start';
 
-        // Execute query
-        const result = await pool.query(query, params);
-
-        // Send response
+        // If availability exists, return it
         res.status(200).json(result.rows);
+
     } catch (error) {
         console.error('Error fetching availability: ', error.message);
         res.status(500).json({error: 'Failed to fetch availability'});
@@ -536,7 +534,7 @@ app.get('/availability', authenticateToken, async (req, res) => {
 // Endpoint for managers to create a schedule
 app.post('/schedule', authenticateToken, async (req, res) => {
     const managerSin = req.user.sin; // Extract SIN 
-    const role = res.user.role; // Extract role from JWT
+    const role = req.user.role; // Extract role from JWT
     const {employeeSin, week} = req.body; // Extract inputs from request body
 
     try {
@@ -548,6 +546,10 @@ app.post('/schedule', authenticateToken, async (req, res) => {
         if (!week || !employeeSin) {
             return res.status(400).json({error: 'Week and employee SIN are required'});
         }
+        const weekInt = parseInt(week, 10);
+        if (isNaN(weekInt) || weekInt < 1 || weekInt > 52) {
+            return res.status(400).json({error: 'Invalid week value. It must be between 1 and 52 inclusive'});
+        }
         // Check if employee exists
         const employeeQuery = `SELECT * FROM employee WHERE sin = $1`;
         const employeeResult = await pool.query(employeeQuery, [employeeSin]);
@@ -557,35 +559,36 @@ app.post('/schedule', authenticateToken, async (req, res) => {
 
         // Check employee availability for the week
         const availabilityCheckQuery = `
-            SELECT COUNT(*) AS count
+            SELECT weekday, emp_start, emp_end
             FROM availability
             WHERE sin = $1
         `;
         const availabilityResult = await pool.query(availabilityCheckQuery, [employeeSin]);
-        const hasAvailability = parseInt(availabilityResult.rows[0].count, 10) > 0;
 
-        // If employee has availability, ensure they have at least one available time slot for the week.
-        if (hasAvailability) {
-            const availabilityValidationQuery = `
-                SELECT *
-                FROM availability
-                WHERE sin = $1
-            `;
-            const availabilityValidationResult = await pool.query(availabilityValidationQuery, [employeeSin]);
+        // Default to 24/7 availability if no explicit availability is set
+        const availability = availabilityResult.rows.length > 0 
+            ? availabilityResult.rows
+            : Array.from({ length: 7 }, (_, i) => ({
+                weekday: i + 1, // Days 1-7 for Monday-Sunday
+                emp_start: '00:00:00',
+                emp_end: '23:59:59'
+            }));
+        
+        // Ensure employee is available at least one day in the week
+        if (availability.length === 0) {
+            return res.status(400).json({error: 'Employee has no availability for the specified week'});
+        }    
 
-            if (availabilityValidationResult.rows.length === 0) {
-                return res.status(400).json({error: 'Employee has no available time slots for the given week'});
-            }
-        }
-        // Insert or update the schedule
+        // Insert or update the schedule for the specified week
         const scheduleQuery = `
             INSERT INTO schedule (week, sin, update_sin)
             VALUES ($1, $2, $3)
             ON CONFLICT (week, sin)
             DO UPDATE SET update_sin = $3
         `;
-        await pool.query(scheduleQuery, [week, employeeSin, managerSin]);
-        res.status(200).json({message: 'Schedule created or updated successfully'});
+        await pool.query(scheduleQuery, [weekInt, employeeSin, managerSin]);
+        res.status(200).json({message: 'Schedule created successfully'});
+
     } catch (error) {
         console.error('Error creating/updating schedule: ', error.message);
         res.status(500).json({error: 'Failed to create/update schedule'});
@@ -606,17 +609,22 @@ const weekdayMap = {
 // Endpoint for managers to create shifts
 app.post('/shift', authenticateToken, async (req, res) => {
     const {sin: msin} = req.user;   // Manager SIN from JWT
-    const {day, week, month, esin, length} = req.body;  // Get data from params
+    const {day, week, month, esin, length, start} = req.body;  // Get data from params
 
     try {
         // Validate inputs
-        if (!day || !week || !month || !esin || !length) {
-            return res.status(400).json({error: 'All fields (day, week, month, esin, length) are required'});
+        if (!day || !week || !month || !esin || !length || !start) {
+            return res.status(400).json({error: 'All fields (day, week, month, esin, length, start) are required'});
         }
         // Check that day and week are valid integers
         const dayInt = parseInt(day, 10);
         const weekInt = parseInt(week, 10);
         const monthInt = parseInt(month, 10);
+
+        // Validate 'start' format (HH:MM:SS), seconds are optional.
+        if (!/^([0-1][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/.test(start)) { // If it matches, continue
+            return res.status(400).json({error: 'Invalid start time format, should be HH:MM:SS'});
+        }
 
         if (isNaN(dayInt) || dayInt < 1 || dayInt > 7) {
             return res.status(400).json({error: 'Invalid day value. It must be an integer between 1 and 7'});
@@ -633,9 +641,9 @@ app.post('/shift', authenticateToken, async (req, res) => {
 
         // Check if employee is scheduled for the given week
         const scheduleCheckQuery = `SELECT * FROM schedule WHERE sin = $1 AND week = $2`;
-        const scheduleResult = await pool.query(scheduleCheckQuery, [esin, week]);
+        const scheduleResult = await pool.query(scheduleCheckQuery, [esin, weekInt]);
 
-        if (scheduleResult.rows.legth === 0) {
+        if (scheduleResult.rows.length === 0) {
             return res.status(400).json({error: 'Employee is not scheduled for this week'});
         }
         // Map day integer to weekday string
@@ -649,22 +657,39 @@ app.post('/shift', authenticateToken, async (req, res) => {
         `;
         const availabilityResult = await pool.query(availabilityCheckQuery, [esin, weekday]);
 
+        // Default to 24/7 availability if no specific availability is set
+        const empStart = availabilityResult.rows.length > 0
+            ? availabilityResult.rows[0].emp_start
+            : '00:00:00';
+        const empEnd = availabilityResult.rows.length > 0
+            ? availabilityResult.rows[0].emp_end
+            : '23:59:59';
+
         if (availabilityResult.rows.length > 0) {
             const {emp_start, emp_end} = availabilityResult.rows[0];    // Assign the values from the query
 
-            // Check if the shift length fits within the available time
-            const shiftEnd = parseFloat(emp_start) + parseFloat(length);
-            if (shiftEnd > emp_end) {
-                return res.status(400).json({error: 'Shift exceeds employee availability'});
+            // Convert times to comparable formats
+            const startTime = new Date(`2000-01-01T${start}:00`);
+            const empStartTime = new Date(`2000-01-01T${emp_start}:00`);
+            const empEndTime = new Date(`2000-01-01T${emp_end}:00`);
+
+            // Calculate shift end time
+            const shiftEndTime = new Date(startTime.getTime() + length * 60 * 60 * 1000); // Conversion to millisecs
+
+            // Validate that shift falls within employee availability
+            if (startTime < empStartTime || shiftEndTime > empEndTime) {
+                return res.status(400).json({
+                    error: 'Shift start time or length exceeds employee availability'
+                });
             }
         }
 
         // Insert shift into table
         const insertShiftQuery = `
-        INSERT INTO shift (day, week, month, msin, esin, length)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO shift (day, week, month, msin, esin, length, start)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         `;
-        await pool.query(insertShiftQuery, [day, week, month, msin, esin, length]);
+        await pool.query(insertShiftQuery, [day, week, month, msin, esin, length, start]);
         res.status(201).json({message: 'Shift created scuccessfully'});
     } catch (error) {
         console.error('Error creating shift: ', error.message);
