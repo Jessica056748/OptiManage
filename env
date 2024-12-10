@@ -1,0 +1,2 @@
+-- NOTE: should back the PORT variable in /backend/.env 
+VITE_BACKEND_PORT=BACKEND_PORT_HERE

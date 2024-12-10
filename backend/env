@@ -1,0 +1,9 @@
+-- NOTE: this is for the context of postgres
+DB_USER=YOUR_DB_USERNAME (postgres by default)
+DB_HOST=YOUR_DB_HOST (localhost by default)
+DB_DATABASE=YOUR_DATABASE (postgres by default)
+DB_PASSWORD=YOUR_DB_PASSWORD
+DB_PORT=YOUR_DB_PORT
+PORT=YOUR_SERVER_PORT
+JWT_SECRET=YOUR_SECRET
+JWT_EXPIRES_IN="1d"

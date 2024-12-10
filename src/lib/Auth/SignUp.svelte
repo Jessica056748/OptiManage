@@ -121,7 +121,13 @@
   <!-- TOOO: Fix the issue where, if a department number that doesn't exist is entered, we cannot create an account. -->
   <label>
     Department Id
-    <input type="number" name="departmentid" placeholder="3" required />
+    <input
+      type="number"
+      name="departmentid"
+      placeholder="3"
+      value="3"
+      required
+    />
   </label>
 
   <!-- TODO: add a second password field to prevent typos. -->
