@@ -1,0 +1,47 @@
+[
+  {
+    "sin": "111111111",
+    "name": "Peter Parker",
+    "phone": "4032345677",
+    "address": "2717 Hocus Pocus Drive, Calgary, Alberta, T2A45K",
+    "departmentid": "3",
+    "email": "PParker@optimanage.ca",
+    "password": "PeterParker"
+  },
+  {
+    "sin": "222222222",
+    "name": "Trump",
+    "phone": "1231231234",
+    "address": "1600 Pennsylvania Avenue NW, Washington, DC 20500, \u00c9tats-Unis",
+    "departmentid": "3",
+    "email": "trump@us.ca",
+    "password": "$2b$12$O12KTsOgKtQmNYJDQTeNFOMrRiZlIjyx1tBvdaLWgv69AEJ0dEBHG"
+  },
+  {
+    "sin": "123456789",
+    "name": "Elon Musk",
+    "phone": "1234567891",
+    "address": "1600 Pennsylvania Avenue NW, Washington, DC 20500, \u00c9tats-Unis",
+    "departmentid": "3",
+    "email": "musk@optimanage.ca",
+    "password": "$2b$12$Z/MOzg8FEnPkV7S.bhwljOlKXk2IC1NYKnmOgF1PgqyIXTVBAOwe."
+  },
+  {
+    "sin": "123871647",
+    "name": "Daniel",
+    "phone": "2121212121",
+    "address": "1212 Ridgemond Rd SW",
+    "departmentid": "3",
+    "email": "daniel@opti.ca",
+    "password": "$2b$12$y9o8wa1.v645GuhsEQvWreANMSU/yRz6hT52RuhkV/QXFZ3JyFDxW"
+  },
+  {
+    "sin": "121212121",
+    "name": "a",
+    "phone": "1111111111",
+    "address": "a",
+    "departmentid": "3",
+    "email": "a@a",
+    "password": "$2b$12$80saBS3oF4s1DeWX2laYte75lNpeOhw8GfEAGOdtfnV5cyCsQzHOW"
+  }
+]
