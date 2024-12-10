@@ -139,6 +139,11 @@
           type="password"
           name="password"
           bind:value={password1}
+          class={password1 === '' && password2 === ''
+            ? ''
+            : password1 === password2
+              ? 'valid'
+              : 'invalid' + ' checker'}
           placeholder="PeterParker"
           required
         />
@@ -151,7 +156,11 @@
           name="password-check"
           bind:value={password2}
           placeholder="PeterParker"
-          class={password1 === password2 ? 'valid' : 'invalid' + ' checker'}
+          class={password1 === '' && password2 === ''
+            ? ''
+            : password1 === password2
+              ? 'valid'
+              : 'invalid' + ' checker'}
           required
         />
       </label>
