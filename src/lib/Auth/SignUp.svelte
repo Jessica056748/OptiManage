@@ -27,8 +27,6 @@
     delete body['password-check']
     let status
 
-    return
-
     try {
       const response = await fetch(`http://localhost:${PORT}/create-manager`, {
           method: 'POST',

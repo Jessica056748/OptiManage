@@ -86,6 +86,8 @@ app.post('/logout', async (req, res) => {
 // createManager function (POST method)
 app.post('/create-manager', async (req, res) => {
   const { sin, name, phone, address, departmentid, email, password } = req.body // Get parameters from request body
+  console.log('body:')
+  console.log(req.body)
   const queryText = `
         SELECT *
         FROM MANAGER
@@ -152,6 +154,9 @@ app.post('/create-manager', async (req, res) => {
 // authenticate(email, password) function (POST method)
 app.post('/authenticate', async (req, res) => {
   const { email, password } = req.body // Get email and password values from request body
+
+  console.log('email:', email)
+  console.log('password:', password)
 
   // parameterized query to retrieve user by email
   const managerQuery = `
