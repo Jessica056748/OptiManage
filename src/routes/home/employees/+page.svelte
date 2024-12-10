@@ -1,7 +1,7 @@
 <script lang="ts">
   const { VITE_BACKEND_PORT: PORT } = import.meta.env
 
-  let adding: boolean = $state(false),
+  let form: string = $state(''),
     password1: string = $state(''),
     password2: string = $state(''),
     warn: string = $state('')
@@ -57,7 +57,7 @@
     if (status === 200) {
       // Operation was successful.
       // Maybe notifying the manager is not necessary, as this component will show an enumeration of the employees.
-      adding = false
+      form = ''
     }
 
     // Otherwise, something else went wrong. Give a vague "try again" message here.
@@ -65,9 +65,11 @@
 </script>
 
 <div>
-  {#if !adding}
-    <button onclick={() => (adding = true)}>Add Employee</button>
-  {:else}
+  {#if form === ''}
+    <button onclick={() => (form = 'employee')}>Add Employee</button>
+    <button onclick={() => (form = 'schedule')}>Add Schdule</button>
+    <button onclick={() => (form = 'shift')}>Add Shift</button>
+  {:else if form === 'employee'}
     <form onsubmit={addEmployee}>
       <!-- TODO: remove "required" from nullable fields, especially department id. -->
       <h2>Add new employee</h2>
@@ -168,9 +170,21 @@
       {#if password1 !== password2}
         <p class={warn}>Passwords should match.</p>
       {/if}
-      <input type="submit" value="Add Employee!" />
+      <input type="submit" value="Add employee" />
 
-      <button type="button" onclick={() => (adding = false)}>Cancel</button>
+      <button type="button" onclick={() => (form = '')}>Cancel</button>
+    </form>
+  {:else if form === 'schedule'}
+    <form>
+      <input type="submit" value="Create schedule" />
+
+      <button type="button" onclick={() => (form = '')}>Cancel</button>
+    </form>
+  {:else if form === 'shift'}
+    <form>
+      <input type="submit" value="Add shift" />
+
+      <button type="button" onclick={() => (form = '')}>Cancel</button>
     </form>
   {/if}
 </div>
