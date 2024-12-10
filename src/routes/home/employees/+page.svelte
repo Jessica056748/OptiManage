@@ -3,15 +3,13 @@
 
   let adding: boolean = $state(false),
     password1: string = $state(''),
-    password2: string = $state('')
+    password2: string = $state(''),
+    warn: string = $state('')
   const { data } = $props(),
     {
       token,
       user: { sin },
     } = data
-
-  $inspect(password1)
-  $inspect(password2)
 
   /**
    * Attempts to create a new employee under the current manager and department.
@@ -21,7 +19,14 @@
     // @ts-ignore
     const body = Object.fromEntries(new FormData(event.target))
 
+    if (body.password != body['password-check']) {
+      warn = 'warn'
+      setTimeout(() => (warn = ''), 1_000)
+      return
+    }
+
     delete body['password-check']
+
     body.msin = sin
     let status
     try {
@@ -63,16 +68,6 @@
   {#if !adding}
     <button onclick={() => (adding = true)}>Add Employee</button>
   {:else}
-    <!-- Fields that need to be included -->
-    <!-- sin,
-    G   name,
-    G phone,
-    G address,
-    G departmentid,
-    G email,
-    G password,
-    msin,
-    rate, -->
     <form onsubmit={addEmployee}>
       <!-- TODO: remove "required" from nullable fields, especially department id. -->
       <h2>Add new employee</h2>
@@ -137,7 +132,6 @@
         <input type="number" name="rate" placeholder="15" required />
       </label>
 
-      <!-- TODO: add a second password field to prevent typos. -->
       <label>
         Password
 
@@ -163,7 +157,7 @@
       </label>
 
       {#if password1 !== password2}
-        Passwords should match.
+        <p class={warn}>Passwords should match.</p>
       {/if}
       <input type="submit" value="Add Employee!" />
 
@@ -198,5 +192,27 @@
   }
   .invalid {
     border: 3px solid red;
+  }
+
+  .warn {
+    animation: warn 1s ease;
+  }
+
+  @keyframes warn {
+    0% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-15px);
+    }
+    50% {
+      color: red;
+    }
+    75% {
+      transform: translateX(15px);
+    }
+    100% {
+      transform: translateX(0);
+    }
   }
 </style>

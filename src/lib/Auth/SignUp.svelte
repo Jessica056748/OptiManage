@@ -1,9 +1,11 @@
 <script lang="ts">
-  import { Role, type User } from '../../types'
+  import { Role } from '../../types'
   import { getUserContext } from '../../context'
   const { VITE_BACKEND_PORT: PORT } = import.meta.env
   let { signingUp = $bindable() }: { signingUp: boolean } = $props(),
-    user = getUserContext()
+    user = getUserContext(),
+    password1: string = $state(''),
+    password2: string = $state('')
 
   /**
    * Sends a signup request to the server, updating the database as well as the App state if successful.
@@ -12,6 +14,7 @@
     event.preventDefault()
     // @ts-ignore
     const body = Object.fromEntries(new FormData(event.target))
+    delete body['password-check']
     let status
 
     try {
