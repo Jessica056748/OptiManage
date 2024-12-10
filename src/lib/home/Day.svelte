@@ -21,10 +21,12 @@
   <a
     href={void 0}
     onclick={() => {
+      // TODO: notify the user somehow that no data is currently available for days past the given month.
+      if (_classes.includes('grayed')) return
       const popUpData = { month, day }
 
       datePopUp = popUpData
-    }}>{day}, {month}</a
+    }}>{day}</a
   >
 </div>
 

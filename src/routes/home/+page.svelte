@@ -6,7 +6,6 @@
 
   let user = getUserContext(),
     { data } = $props(),
-    // datePopUp: String | undefined = $state(),
     datePopUp: undefined | PopUpData = $state(void 0),
     { shifts } = data
 

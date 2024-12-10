@@ -1,6 +1,7 @@
 import { VITE_BACKEND_PORT as PORT } from '$env/static/private'
 import { redirect } from '@sveltejs/kit'
 import { type User } from '../../types.js'
+import { Role } from '../../types.js'
 
 /**
  * Redirects the user to the authentication page if they are not authenticated.
@@ -23,6 +24,9 @@ export async function load({ cookies }) {
     { user }: { user: User } = await response.json()
 
   if (response.status !== 200) throw redirect(307, '/')
+
+  // @ts-ignore
+  user.role = user.role === 'manager' ? Role.Manager : Role.Employee
 
   return { user }
 }

@@ -9,7 +9,7 @@ import { type Shift } from '../../types'
 export async function load({ cookies }) {
   const token = cookies.get('jwt'),
     month = new Date().getMonth()
-
+  // TODO: hit a different endpoint depending on whether the user is a manager or employee.
   try {
     const response = await fetch(
         `http://localhost:${PORT}/shifts/department?month=${month}`,

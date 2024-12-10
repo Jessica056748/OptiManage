@@ -5,11 +5,18 @@ enum Role {
   Manager, // 2
 }
 // TODO: define the Shift schema.
-type Shift = {}
+type Shift = {
+  day: number
+  week: number
+  month: string
+  msin: string
+  esin: string
+  length: number
+}
 type User = {
-  name: String
-  sin: String
-  email: String
+  name: string
+  sin: string
+  email: string
   shifts: Array<Shift>
   role: Role
   iat: number

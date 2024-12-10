@@ -1,9 +1,16 @@
 <script lang="ts">
+  import { getUserContext } from '../../context'
   import type { PopUpData } from '../../types'
 
   let { datePopUp = $bindable() }: { datePopUp: PopUpData | undefined } =
       $props(),
     animation = $state('show')
+  const user = getUserContext(),
+    shifts = user.shifts.filter(
+      ({ day: shiftDay, month: shiftMonth, esin: shiftSIN }) =>
+        // TODO: adjust this filter function so it actually works. Wait until an actual shift is present to edit.
+        shiftDay === datePopUp?.day && shiftMonth && shiftSIN === user.sin
+    )
 
   function hide() {
     animation = 'hide'
@@ -16,9 +23,13 @@
 </script>
 
 <div class={animation}>
-  {datePopUp.day || 'No day found'}
-  {datePopUp.month || 'No day found'}
-  <!-- {datePopUp?.month} -->
+  {datePopUp?.day || 'No day found'}
+  {datePopUp?.month || 'No month found'}
+
+  {#each shifts as shift}
+    <!-- TODO: display the employee's name, and the time of their shift. Color-coded shifts (a different color for each employee) would be awesome. -->
+    <div class="shift">{shift.esin}</div>
+  {/each}
   <button aria-label="close popup" title="Close popup" onclick={hide}>
     <svg viewBox="0 0 384 512">
       <path
@@ -34,6 +45,9 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+
+    display: flex;
+    flex-direction: column;
 
     color: white;
     background-color: hsla(0, 0%, 0%, 0.5);
